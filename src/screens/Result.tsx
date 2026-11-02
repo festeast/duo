@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
-import { PixelCat } from '../components/PixelCat'
+import { Cat } from '../components/Cat'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
-import { activePlayer, levelOf, useStore } from '../lib/store'
+import { levelOf, useStore } from '../lib/store'
 import type { LessonResult } from './Lesson'
 
 export function Result({ r, onDone }: { r: LessonResult; onDone: () => void }) {
-  const me = useStore(activePlayer)!
+  const me = useStore((s) => s.profile)!
   const lvl = levelOf(me.xp)
 
   useEffect(() => {
@@ -16,32 +16,40 @@ export function Result({ r, onDone }: { r: LessonResult; onDone: () => void }) {
   }, [])
 
   return (
-    <div className="screen center" style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <h1 style={{ color: 'var(--yellow)' }} className="pop">{t.lessonComplete}</h1>
-      <div style={{ fontSize: 48, color: 'var(--yellow)', letterSpacing: 8 }}>
-        {'★'.repeat(r.stars)}
-        <span className="muted">{'☆'.repeat(3 - r.stars)}</span>
+    <div className="screen center result">
+      <div className="confetti" aria-hidden>
+        {Array.from({ length: 18 }, (_, i) => (
+          <i key={i} style={{ left: `${(i * 37) % 100}%`, animationDelay: `${(i % 6) * 0.15}s`, ['--h' as string]: `${(i * 47) % 360}` }} />
+        ))}
       </div>
-      <PixelCat look={me.cat} size={160} mood="happy" bounce />
+      <h1 className="pop">{r.title}</h1>
+      <div className="big-stars">
+        {[1, 2, 3].map((n) => (
+          <span key={n} className={n <= r.stars ? 'on pop' : ''} style={{ animationDelay: `${n * 0.15}s` }}>
+            ★
+          </span>
+        ))}
+      </div>
+      <Cat look={me.cat} size={170} mood="happy" bounce />
 
-      <div className="row" style={{ gap: 16 }}>
-        <div className="px-box col" style={{ gap: 4, minWidth: 92 }}>
-          <span className="muted" style={{ fontSize: 16 }}>XP</span>
-          <h2 style={{ color: 'var(--cyan)' }}>+{r.xp}</h2>
+      <div className="stat-row">
+        <div className="stat">
+          <span className="muted small">XP</span>
+          <b className="xp-text">+{r.xp}</b>
         </div>
-        <div className="px-box col" style={{ gap: 4, minWidth: 92 }}>
-          <span className="muted" style={{ fontSize: 16 }}>🪙 {t.coins}</span>
-          <h2 style={{ color: 'var(--yellow)' }}>+{r.coins}</h2>
+        <div className="stat">
+          <span className="muted small">🪙 {t.coins}</span>
+          <b className="coin-text">+{r.coins}</b>
         </div>
-        <div className="px-box col" style={{ gap: 4, minWidth: 92 }}>
-          <span className="muted" style={{ fontSize: 16 }}>{t.accuracy}</span>
-          <h2 style={{ color: 'var(--green-hi)' }}>{r.accuracy}%</h2>
+        <div className="stat">
+          <span className="muted small">{t.accuracy}</span>
+          <b className="ok-text">{r.accuracy}%</b>
         </div>
       </div>
 
       {r.levelUp && (
-        <div className="px-box pop" style={{ background: 'var(--purple)' }}>
-          <h3 className="blink" style={{ color: 'var(--yellow)' }}>▲ {t.levelUp}</h3>
+        <div className="card level-up pop">
+          <h3>🎉 {t.levelUp}</h3>
           <span>
             {t.level} {lvl.level}: {lvl.name}
           </span>

@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  build: { chunkSizeWarningLimit: 700 },
   plugins: [
     react(),
     VitePWA({
@@ -15,15 +16,15 @@ export default defineConfig({
         start_url: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#1a1c2c',
-        theme_color: '#1a1c2c',
+        background_color: '#fff8ef',
+        theme_color: '#fff8ef',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,png,woff,woff2}'] },
+      workbox: { globPatterns: ['**/*.{js,css,html,png,woff2}'] },
     }),
   ],
 })
