@@ -1,0 +1,216 @@
+/* ДУО — ретро 8-bit стиль. Палитра: Sweetie 16 */
+:root {
+  --bg: #1a1c2c;
+  --bg2: #29366f;
+  --panel: #333c57;
+  --panel-hi: #566c86;
+  --text: #f4f4f4;
+  --muted: #94b0c2;
+  --green: #38b764;
+  --green-hi: #a7f070;
+  --red: #b13e53;
+  --orange: #ef7d57;
+  --yellow: #ffcd75;
+  --blue: #41a6f6;
+  --cyan: #73eff7;
+  --purple: #5d275d;
+  --px: 4px;
+  --font-pixel: 'Tiny5', ui-monospace, monospace;
+  --font-read: 'Handjet', 'Tiny5', ui-monospace, monospace;
+  font-family: var(--font-read);
+  font-weight: 500;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body, #root { margin: 0; height: 100%; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1.2;
+  -webkit-font-smoothing: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;
+}
+
+/* CRT сызықтары — тек титул экранында (мәтін оқуға кедергі келтірмес үшін) */
+.title-screen::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0 2px, rgba(0,0,0,.12) 2px 4px);
+  z-index: 100;
+}
+
+button, input { font: inherit; color: inherit; }
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+
+.screen { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 16px; }
+
+h1, h2, h3 { margin: 0; font-weight: normal; font-family: var(--font-pixel); }
+.btn, .tabbar button, .logo, .chip, .node, .node-label, .unit-head small { font-family: var(--font-pixel); font-weight: 400; }
+h1 { font-size: 40px; }
+h2 { font-size: 28px; }
+h3 { font-size: 22px; }
+.muted { color: var(--muted); }
+.center { text-align: center; }
+.row { display: flex; align-items: center; gap: 12px; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.spacer { flex: 1; }
+
+/* ---------- Пиксель жиек ---------- */
+.px-box {
+  background: var(--panel);
+  box-shadow:
+    0 calc(-1 * var(--px)) 0 0 var(--text),
+    0 var(--px) 0 0 var(--text),
+    calc(-1 * var(--px)) 0 0 0 var(--text),
+    var(--px) 0 0 0 var(--text);
+  margin: var(--px);
+  padding: 12px;
+}
+
+/* ---------- Батырмалар ---------- */
+.btn {
+  --c: var(--green);
+  --c-dark: #257179;
+  position: relative;
+  border: 0;
+  background: var(--c);
+  color: var(--bg);
+  padding: 14px 18px 18px;
+  font-size: 22px;
+  cursor: pointer;
+  margin: var(--px);
+  box-shadow:
+    inset 0 calc(-1 * var(--px)) 0 0 var(--c-dark),
+    0 calc(-1 * var(--px)) 0 0 var(--bg),
+    0 var(--px) 0 0 var(--bg),
+    calc(-1 * var(--px)) 0 0 0 var(--bg),
+    var(--px) 0 0 0 var(--bg);
+  transition: transform 60ms;
+}
+.btn:active:not(:disabled) { transform: translateY(var(--px)); box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--bg), 0 var(--px) 0 0 var(--bg), calc(-1 * var(--px)) 0 0 0 var(--bg), var(--px) 0 0 0 var(--bg); }
+.btn:disabled { --c: var(--panel-hi); --c-dark: var(--panel); color: var(--muted); cursor: default; }
+.btn.red { --c: var(--red); --c-dark: var(--purple); color: var(--text); }
+.btn.blue { --c: var(--blue); --c-dark: var(--bg2); }
+.btn.yellow { --c: var(--yellow); --c-dark: var(--orange); }
+.btn.ghost { --c: var(--panel); --c-dark: var(--bg); color: var(--text); }
+.btn.small { font-size: 18px; padding: 8px 12px 12px; }
+.btn.wide { width: calc(100% - 2 * var(--px)); }
+
+/* Тапсырма нұсқалары */
+.option {
+  border: 0;
+  background: var(--panel);
+  color: var(--text);
+  padding: 12px;
+  font-size: 28px;
+  margin: var(--px);
+  cursor: pointer;
+  text-align: center;
+  box-shadow:
+    inset 0 calc(-1 * var(--px)) 0 0 var(--bg),
+    0 calc(-1 * var(--px)) 0 0 var(--panel-hi),
+    0 var(--px) 0 0 var(--panel-hi),
+    calc(-1 * var(--px)) 0 0 0 var(--panel-hi),
+    var(--px) 0 0 0 var(--panel-hi);
+}
+.option.selected { background: var(--bg2); box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--blue), 0 var(--px) 0 0 var(--blue), calc(-1 * var(--px)) 0 0 0 var(--blue), var(--px) 0 0 0 var(--blue); color: var(--cyan); }
+.option.good { background: #1e4d3a; color: var(--green-hi); box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--green), 0 var(--px) 0 0 var(--green), calc(-1 * var(--px)) 0 0 0 var(--green), var(--px) 0 0 0 var(--green); }
+.option.bad { background: #4a1f2b; color: #ff9aa8; box-shadow: 0 calc(-1 * var(--px)) 0 0 var(--red), 0 var(--px) 0 0 var(--red), calc(-1 * var(--px)) 0 0 0 var(--red), var(--px) 0 0 0 var(--red); animation: shake 300ms; }
+.option.gone { visibility: hidden; }
+.option:disabled { cursor: default; }
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* ---------- Прогресс жолағы ---------- */
+.bar { height: 16px; background: var(--bg); box-shadow: 0 0 0 var(--px) var(--panel-hi); margin: var(--px); flex: 1; position: relative; overflow: hidden; }
+.bar > i { position: absolute; inset: 0 auto 0 0; background: var(--green); transition: width 300ms steps(6); }
+.bar > i::after { content: ''; position: absolute; left: 4px; right: 4px; top: 3px; height: 3px; background: var(--green-hi); }
+.bar.xp > i { background: var(--blue); }
+.bar.xp > i::after { background: var(--cyan); }
+
+/* ---------- Анимациялар ---------- */
+.pixel-cat { image-rendering: pixelated; display: block; }
+.pixel-cat.bounce { animation: bounce 900ms steps(2) infinite; }
+@keyframes bounce { 50% { transform: translateY(-6px); } }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@keyframes blink { 50% { opacity: 0; } }
+.blink { animation: blink 1s steps(1) infinite; }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.pop { animation: pop 250ms steps(4); }
+
+/* ---------- Басты бет ---------- */
+.hud { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--bg2); position: sticky; top: 0; z-index: 10; padding-top: max(12px, env(safe-area-inset-top)); }
+.chip { display: inline-flex; align-items: center; gap: 6px; font-size: 20px; }
+.unit-head { padding: 12px 14px; color: var(--bg); margin: var(--px); box-shadow: 0 0 0 var(--px) var(--bg); }
+.unit-head small { display: block; opacity: .75; font-size: 16px; }
+.path { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 12px 0 24px; }
+.node {
+  width: 76px; height: 70px;
+  border: 0; cursor: pointer;
+  background: var(--c, var(--green));
+  font-size: 30px;
+  box-shadow: inset 0 -8px 0 0 rgba(0,0,0,.3), 0 0 0 var(--px) var(--bg), 0 8px 0 0 var(--bg);
+  display: grid; place-items: center;
+  position: relative;
+}
+.node:active:not(:disabled) { transform: translateY(4px); }
+.node:disabled { background: var(--panel); color: var(--muted); cursor: default; }
+.node .stars { position: absolute; bottom: -22px; font-size: 14px; color: var(--yellow); white-space: nowrap; }
+.node-label { font-size: 16px; color: var(--muted); margin-top: 8px; }
+
+.tabbar { display: flex; position: sticky; bottom: 0; background: var(--bg2); padding-bottom: env(safe-area-inset-bottom); z-index: 10; box-shadow: 0 -4px 0 0 var(--bg); }
+.tabbar button { flex: 1; border: 0; background: none; padding: 10px 0 12px; font-size: 18px; color: var(--muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.tabbar button.on { color: var(--yellow); }
+.tabbar .ico { font-size: 24px; }
+
+/* ---------- Сабақ ---------- */
+.lesson-top { display: flex; align-items: center; gap: 12px; }
+.icon-btn { border: 0; background: none; font-size: 28px; padding: 4px 8px; cursor: pointer; color: var(--muted); }
+.prompt { font-size: 38px; }
+.speak-btn { border: 0; background: var(--blue); color: var(--bg); font-size: 26px; width: 64px; height: 60px; cursor: pointer; box-shadow: inset 0 -6px 0 0 var(--bg2), 0 0 0 var(--px) var(--bg); }
+.speak-btn.big { width: 120px; height: 100px; font-size: 44px; }
+.speak-btn.slow { background: var(--panel-hi); width: 64px; height: 60px; font-size: 18px; }
+.answer-line { min-height: 64px; border-bottom: 4px solid var(--panel-hi); display: flex; flex-wrap: wrap; gap: 4px; padding-bottom: 8px; align-content: flex-start; }
+.tiles { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
+.tile { padding: 8px 14px 12px; font-size: 28px; }
+.feedback { position: sticky; bottom: 0; margin: 0 -16px -16px; padding: 16px 16px max(16px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; }
+.feedback.ok { background: #1e4d3a; color: var(--green-hi); }
+.feedback.no { background: #4a1f2b; color: #ff9aa8; }
+.bubble { position: relative; background: var(--text); color: var(--bg); padding: 8px 12px; font-size: 26px; margin-left: 8px; box-shadow: 0 0 0 var(--px) var(--bg); }
+.bubble::before { content: ''; position: absolute; left: -12px; top: 14px; border: 6px solid transparent; border-right-color: var(--text); }
+
+/* ---------- Енгізу ---------- */
+.input { width: calc(100% - 2 * var(--px)); background: var(--bg); border: 0; padding: 12px; font-size: 28px; box-shadow: 0 0 0 var(--px) var(--panel-hi); margin: var(--px); -webkit-user-select: text; user-select: text; }
+.input:focus { outline: none; box-shadow: 0 0 0 var(--px) var(--yellow); }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatch { width: 52px; height: 52px; border: 0; cursor: pointer; box-shadow: 0 0 0 var(--px) var(--bg); position: relative; }
+.swatch.on { box-shadow: 0 0 0 var(--px) var(--yellow), 0 0 0 calc(2 * var(--px)) var(--bg); }
+
+/* ---------- Титул ---------- */
+.title-screen { position: relative; align-items: center; justify-content: center; text-align: center; background: radial-gradient(circle at 50% 40%, var(--bg2), var(--bg) 70%); cursor: pointer; }
+.logo { font-size: 96px; letter-spacing: 8px; color: var(--yellow); text-shadow: 6px 6px 0 var(--red), 12px 12px 0 var(--purple); }
+.stars-bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.stars-bg i { position: absolute; width: 4px; height: 4px; background: var(--text); animation: blink 2s steps(1) infinite; }
+
+.duo-cats { display: flex; justify-content: center; align-items: flex-end; gap: 8px; }
+.heart { font-size: 28px; color: var(--red); margin-bottom: 30px; }
+
+.shop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.shop-item { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.shop-item .price { color: var(--yellow); }
