@@ -18,6 +18,9 @@ export type Unit = {
   lessons: Lesson[]
 }
 
+const L = (id: string, title: string, words: Pair[], sentences: Pair[]): Lesson => ({ id, title, words, sentences })
+const U = (id: string, title: string, icon: string, color: string, lessons: Lesson[]): Unit => ({ id, title, icon, color, lessons })
+
 export const COURSE: Unit[] = [
   {
     id: 'greet',
@@ -225,8 +228,67 @@ export const COURSE: Unit[] = [
           ['Saat sekiz.', 'Сағат сегіз.'],
         ],
       },
+      L('numbers-3', 'Үлкен сандар', [['yirmi','жиырма'],['otuz','отыз'],['kırk','қырық'],['elli','елу'],['yüz','жүз'],['bin','мың']],
+        [['Yirmi yaşındayım.','Мен жиырма жастамын.'],['Yüz lira, lütfen.','Жүз лира, өтінемін.'],['Bin teşekkürler!','Мың рахмет!']]),
     ],
   },
+
+  U('colors', 'Түстер', '🎨', '#E86A92', [
+    L('colors-1', 'Түстер', [['kırmızı','қызыл'],['mavi','көк'],['yeşil','жасыл'],['sarı','сары'],['mor','күлгін'],['pembe','қызғылт']],
+      [['Gökyüzü mavi.','Аспан көк.'],['Elma kırmızı.','Алма қызыл.'],['En sevdiğim renk yeşil.','Менің ең жақсы көретін түсім — жасыл.']]),
+    L('colors-2', 'Айнала', [['turuncu','қызғылт сары'],['gri','сұр'],['kahverengi','қоңыр'],['renk','түс'],['araba','көлік'],['çiçek','гүл']],
+      [['Bu çiçek çok güzel.','Бұл гүл өте әдемі.'],['Benim arabam gri.','Менің көлігім сұр.'],['Turuncu kedi uyuyor.','Қызғылт сары мысық ұйықтап жатыр.']]),
+  ]),
+  U('time', 'Уақыт', '⏰', '#5C7CFA', [
+    L('time-1', 'Бүгін, ертең', [['bugün','бүгін'],['yarın','ертең'],['dün','кеше'],['sabah','таңертең'],['akşam','кеш'],['gece','түн']],
+      [['Bugün hava güzel.','Бүгін ауа райы жақсы.'],['Yarın görüşürüz.','Ертең кездесеміз.'],['Dün çok yorgundum.','Кеше мен қатты шаршадым.']]),
+    L('time-2', 'Апта күндері', [['pazartesi','дүйсенбі'],['salı','сейсенбі'],['çarşamba','сәрсенбі'],['perşembe','бейсенбі'],['cuma','жұма'],['cumartesi','сенбі'],['pazar','жексенбі']],
+      [['Bugün pazartesi.','Бүгін дүйсенбі.'],['Cuma günü sinemaya gidiyoruz.','Жұма күні киноға барамыз.'],['Pazar günü evdeyim.','Жексенбі күні үйдемін.']]),
+  ]),
+  U('questions', 'Сұрақтар', '❓', '#20C997', [
+    L('questions-1', 'Не? Қайда?', [['ne','не'],['kim','кім'],['nerede','қайда'],['ne zaman','қашан'],['neden','неге'],['nasıl','қалай']],
+      [['Bu ne?','Бұл не?'],['Sen neredesin?','Сен қайдасың?'],['Bu kim?','Бұл кім?'],['Neden gülüyorsun?','Неге күліп тұрсың?']]),
+  ]),
+  U('home', 'Үй', '🛋️', '#C08457', [
+    L('home-1', 'Бөлмелер', [['oda','бөлме'],['mutfak','ас үй'],['kapı','есік'],['pencere','терезе'],['yatak','төсек'],['masa','үстел']],
+      [['Mutfak çok temiz.','Ас үй өте таза.'],['Kapıyı aç, lütfen.','Есікті ашшы, өтінемін.'],['Kedi yatakta uyuyor.','Мысық төсекте ұйықтап жатыр.']]),
+  ]),
+  U('verbs', 'Етістіктер', '🏃', '#FF922B', [
+    L('verbs-1', 'Күнделікті іс', [['gelmek','келу'],['gitmek','бару'],['yemek','жеу'],['içmek','ішу'],['okumak','оқу'],['konuşmak','сөйлеу']],
+      [['Ben geliyorum.','Мен келе жатырмын.'],['Sen nereye gidiyorsun?','Сен қайда бара жатырсың?'],['Türkçe konuşuyorum.','Мен түрікше сөйлеймін.'],['Kitap okuyorum.','Мен кітап оқып отырмын.']]),
+    L('verbs-2', 'Білемін, түсінемін', [['sevmek','жақсы көру'],['istemek','қалау'],['bilmek','білу'],['anlamak','түсіну'],['yapmak','істеу'],['öğrenmek','үйрену']],
+      [['Anlamıyorum.','Түсінбеймін.'],['Bilmiyorum.','Білмеймін.'],['Türkçe öğreniyoruz.','Біз түрік тілін үйреніп жатырмыз.'],['Ne yapıyorsun?','Не істеп жатырсың?']]),
+  ]),
+  U('feelings', 'Сезімдер', '😊', '#FAB005', [
+    L('feelings-1', 'Көңіл-күй', [['üzgün','мұңды'],['yorgun','шаршаған'],['kızgın','ашулы'],['hasta','ауру'],['iyi','жақсы'],['kötü','жаман']],
+      [['Bugün çok yorgunum.','Бүгін мен қатты шаршадым.'],['Neden üzgünsün?','Неге мұңайып тұрсың?'],['Kendimi iyi hissediyorum.','Өзімді жақсы сезінемін.']]),
+  ]),
+  U('weather', 'Ауа райы', '☀️', '#339AF0', [
+    L('weather-1', 'Күн мен жаңбыр', [['hava','ауа райы'],['güneş','күн'],['yağmur','жаңбыр'],['kar','қар'],['sıcak','ыстық'],['soğuk','суық']],
+      [['Bugün hava çok sıcak.','Бүгін ауа райы өте ыстық.'],['Dışarıda yağmur yağıyor.','Сыртта жаңбыр жауып тұр.'],['Kışın kar yağar.','Қыста қар жауады.']]),
+  ]),
+  U('clothes', 'Киім', '👗', '#CC5DE8', [
+    L('clothes-1', 'Гардероб', [['elbise','көйлек'],['gömlek','жейде'],['ayakkabı','аяқкиім'],['şapka','қалпақ'],['ceket','күрте'],['pantolon','шалбар']],
+      [['Bu elbise çok güzel.','Бұл көйлек өте әдемі.'],['Ayakkabılarım nerede?','Менің аяқкиімім қайда?'],['Ceketini giy, hava soğuk.','Күртеңді ки, ауа райы суық.']]),
+  ]),
+  U('body', 'Дене', '🖐️', '#F06595', [
+    L('body-1', 'Бас пен қол', [['baş','бас'],['göz','көз'],['el','қол'],['ayak','аяқ'],['ağız','ауыз'],['kulak','құлақ']],
+      [['Başım ağrıyor.','Басым ауырып тұр.'],['Kedinin gözleri yeşil.','Мысықтың көздері жасыл.'],['Ellerini yıka.','Қолыңды жу.']]),
+  ]),
+  U('travel', 'Саяхат', '✈️', '#15AABF', [
+    L('travel-1', 'Қалада', [['otel','қонақүй'],['havalimanı','әуежай'],['istasyon','бекет'],['sokak','көше'],['deniz','теңіз'],['müze','мұражай']],
+      [['Otel nerede?','Қонақүй қайда?'],['Denize gidelim!','Теңізге барайық!'],['Havalimanına nasıl giderim?','Әуежайға қалай барамын?']]),
+    L('travel-2', 'Бағыттар', [['sağ','оң'],['sol','сол'],['düz','тура'],['yakın','жақын'],['uzak','алыс'],['burada','осында']],
+      [['Sağa dönün.','Оңға бұрылыңыз.'],['Müze çok yakın.','Мұражай өте жақын.'],['Düz gidin.','Тура жүріңіз.']]),
+  ]),
+  U('shopping', 'Дүкен', '🛒', '#51CF66', [
+    L('shopping-1', 'Сатып алу', [['para','ақша'],['ucuz','арзан'],['pahalı','қымбат'],['market','дүкен'],['almak','сатып алу'],['indirim','жеңілдік']],
+      [['Bu ne kadar?','Бұл қанша тұрады?'],['Çok pahalı!','Өте қымбат!'],['Ekmek almak istiyorum.','Мен нан сатып алғым келеді.']]),
+  ]),
+  U('restaurant', 'Мейрамхана', '🍲', '#FF6B6B', [
+    L('restaurant-1', 'Тапсырыс', [['menü','мәзір'],['hesap','есепшот'],['garson','даяшы'],['tatlı','тәтті тағам'],['çorba','сорпа'],['salata','салат']],
+      [['Menüyü alabilir miyim?','Мәзірді алсам бола ма?'],['Hesap, lütfen.','Есепшот, өтінемін.'],['Çorba çok sıcak.','Сорпа өте ыстық.']]),
+  ]),
   {
     id: 'love',
     title: 'Махаббат',
@@ -251,6 +313,8 @@ export const COURSE: Unit[] = [
           ['Çok mutluyum.', 'Мен өте бақыттымын.'],
         ],
       },
+      L('love-2', 'Сағыныш', [['sarılmak','құшақтау'],['özlemek','сағыну'],['öpmek','сүю'],['hayat','өмір'],['söz','уәде'],['sonsuza dek','мәңгі']],
+        [['Seni özledim.','Мен сені сағындым.'],['Sen benim hayatımsın.','Сен менің өмірімсің.'],['Sonsuza dek birlikte.','Мәңгі біргеміз.']]),
     ],
   },
 ]

@@ -1,7 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import '@fontsource/tiny5/400.css'
-import '@fontsource/handjet/500.css'
+import '@fontsource/nunito/600.css'
+import '@fontsource/nunito/800.css'
+import '@fontsource/nunito/900.css'
 import './index.css'
 import App from './App'
 

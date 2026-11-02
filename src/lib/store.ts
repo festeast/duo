@@ -1,72 +1,85 @@
 import { useSyncExternalStore } from 'react'
-import type { EyeId, FurId } from '../data/cat'
+import type { Session } from '@supabase/supabase-js'
+import type { DialogSession, Profile } from './types'
 
-// Қазір деректер телефонның өзінде (localStorage) сақталады.
-// 2-кезеңде осы модуль Supabase-ке қосылады: екі iPhone арасында синхрондау.
-
-export type CatLook = { fur: FurId; eyes: EyeId; head?: string; face?: string; neck?: string }
-
-export type Player = {
-  id: string
-  name: string
-  cat: CatLook
-  xp: number
-  coins: number
-  owned: string[]
-  lessons: Record<string, number> // сабақ id → жұлдыз (1–3)
-  days: Record<string, number> // 'YYYY-MM-DD' → сол күнгі XP
+export type Friend = {
+  friendshipId: number
+  status: 'pending' | 'accepted'
+  incoming: boolean // маған келген сұраныс па
+  profile: Profile
+  days: Record<string, number>
+  lessonsDone: number
 }
 
 export type State = {
-  players: Player[]
-  activeId: string | null
+  ready: boolean
+  session: Session | null
+  profile: Profile | null
+  progress: Record<string, number> // сабақ → жұлдыз
+  days: Record<string, number> // күн → XP
+  friends: Friend[]
+  invites: DialogSession[] // маған келген диалог шақырулары
   sound: boolean
+  toast: string | null
 }
 
-const KEY = 'duo-state-v1'
+const SOUND_KEY = 'duo-sound'
 
-function load(): State {
+function loadSound() {
   try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) return JSON.parse(raw) as State
+    return localStorage.getItem(SOUND_KEY) !== 'off'
   } catch {
-    /* бос */
+    return true
   }
-  return { players: [], activeId: null, sound: true }
 }
 
-let state: State = load()
+let state: State = {
+  ready: false,
+  session: null,
+  profile: null,
+  progress: {},
+  days: {},
+  friends: [],
+  invites: [],
+  sound: loadSound(),
+  toast: null,
+}
+
 const listeners = new Set<() => void>()
-
-function save() {
-  try {
-    localStorage.setItem(KEY, JSON.stringify(state))
-  } catch {
-    /* бос */
+const subscribe = (l: () => void) => {
+  listeners.add(l)
+  return () => {
+    listeners.delete(l)
   }
 }
 
-export function setState(fn: (s: State) => State) {
-  state = fn(state)
-  save()
+export function setState(patch: Partial<State> | ((s: State) => Partial<State>)) {
+  const p = typeof patch === 'function' ? patch(state) : patch
+  state = { ...state, ...p }
+  if ('sound' in p) {
+    try {
+      localStorage.setItem(SOUND_KEY, state.sound ? 'on' : 'off')
+    } catch {
+      /* бос */
+    }
+  }
   listeners.forEach((l) => l())
 }
 
-export function getState() {
-  return state
-}
+export const getState = () => state
 
 export function useStore<T>(sel: (s: State) => T): T {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l)
-      return () => listeners.delete(l)
-    },
-    () => sel(state),
-  )
+  return useSyncExternalStore(subscribe, () => sel(state))
 }
 
-// ---------- Көмекші функциялар ----------
+let toastTimer: ReturnType<typeof setTimeout> | undefined
+export function toast(msg: string) {
+  setState({ toast: msg })
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => setState({ toast: null }), 2600)
+}
+
+// ---------- Есептеулер ----------
 
 export function dayKey(d = new Date()) {
   const y = d.getFullYear()
@@ -75,38 +88,28 @@ export function dayKey(d = new Date()) {
   return `${y}-${m}-${day}`
 }
 
-function daysAgo(n: number) {
+export function daysAgo(n: number) {
   const d = new Date()
   d.setDate(d.getDate() - n)
   return dayKey(d)
 }
 
-export function activePlayer(s: State): Player | undefined {
-  return s.players.find((p) => p.id === s.activeId)
-}
-
-export function partnerOf(s: State): Player | undefined {
-  return s.players.find((p) => p.id !== s.activeId)
-}
-
-/** Бірге стрик: екеуі де сабақ өткен қатарынан күндер саны.
- *  Бүгін әлі өтпесе, кешегі күннен бастап санаймыз (от әлі сөнген жоқ). */
-export function sharedStreak(players: Player[]): number {
-  if (players.length === 0) return 0
-  const studied = (n: number) => players.every((p) => (p.days[daysAgo(n)] ?? 0) > 0)
+/** Барлық берілген адамдар бірге сабақ өткен қатарынан күндер.
+ *  Бүгін әлі өтпесе, кешеден бастап санаймыз (от әлі сөнген жоқ). */
+export function streakOf(...people: Record<string, number>[]): number {
+  if (people.length === 0) return 0
+  const studied = (n: number) => people.every((d) => (d[daysAgo(n)] ?? 0) > 0)
   const start = studied(0) ? 0 : 1
   let count = 0
   while (studied(start + count)) count++
   return count
 }
 
-export function studiedToday(p: Player) {
-  return (p.days[dayKey()] ?? 0) > 0
-}
+export const studiedToday = (days: Record<string, number>) => (days[dayKey()] ?? 0) > 0
 
-export function weeklyXp(p: Player) {
+export function weeklyXp(days: Record<string, number>) {
   let sum = 0
-  for (let i = 0; i < 7; i++) sum += p.days[daysAgo(i)] ?? 0
+  for (let i = 0; i < 7; i++) sum += days[daysAgo(i)] ?? 0
   return sum
 }
 
@@ -128,36 +131,4 @@ export function levelOf(xp: number) {
   return { level: i + 1, name: cur.name, progress, next }
 }
 
-// ---------- Әрекеттер ----------
-
-const uid = () => Math.random().toString(36).slice(2, 10)
-
-export function createPlayer(name: string, cat: CatLook) {
-  const p: Player = { id: uid(), name, cat, xp: 0, coins: 20, owned: [], lessons: {}, days: {} }
-  setState((s) => ({ ...s, players: [...s.players, p].slice(-2), activeId: p.id }))
-}
-
-export function updatePlayer(id: string, fn: (p: Player) => Player) {
-  setState((s) => ({ ...s, players: s.players.map((p) => (p.id === id ? fn(p) : p)) }))
-}
-
-export function switchPlayer(id: string) {
-  setState((s) => ({ ...s, activeId: id }))
-}
-
-export function finishLesson(lessonId: string, stars: number, xp: number, coins: number) {
-  const s = getState()
-  if (!s.activeId) return
-  const today = dayKey()
-  updatePlayer(s.activeId, (p) => ({
-    ...p,
-    xp: p.xp + xp,
-    coins: p.coins + coins,
-    lessons: { ...p.lessons, [lessonId]: Math.max(stars, p.lessons[lessonId] ?? 0) },
-    days: { ...p.days, [today]: (p.days[today] ?? 0) + xp },
-  }))
-}
-
-export function toggleSound() {
-  setState((s) => ({ ...s, sound: !s.sound }))
-}
+export const acceptedFriends = (s: State) => s.friends.filter((f) => f.status === 'accepted')
