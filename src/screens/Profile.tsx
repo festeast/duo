@@ -7,12 +7,12 @@ import { levelOf, setState, streakOf, useStore } from '../lib/store'
 
 export function Profile({ onEdit }: { onEdit: () => void }) {
   const me = useStore((s) => s.profile)
-  const progress = useStore((s) => s.progress)
+  const words = useStore((s) => s.words)
   const days = useStore((s) => s.days)
   const sound = useStore((s) => s.sound)
   if (!me) return null
   const lvl = levelOf(me.xp)
-  const lessons = Object.keys(progress).filter((k) => !k.startsWith('dlg-')).length
+  const learned = Object.keys(words).length
 
   return (
     <div className="screen">
@@ -33,8 +33,8 @@ export function Profile({ onEdit }: { onEdit: () => void }) {
           <b className="xp-text">{me.xp}</b>
         </div>
         <div className="stat">
-          <span className="muted small">{t.lessonsDone}</span>
-          <b>{lessons}</b>
+          <span className="muted small">{t.wordsLearned}</span>
+          <b>{learned}</b>
         </div>
         <div className="stat">
           <span className="muted small">🔥 {t.bestStreak}</span>

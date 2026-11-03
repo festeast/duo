@@ -3,7 +3,16 @@ import { Cat } from '../components/Cat'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
 import { levelOf, useStore } from '../lib/store'
-import type { LessonResult } from './Lesson'
+
+export type LessonResult = {
+  title: string
+  stars: number
+  xp: number
+  coins: number
+  accuracy: number
+  levelUp: boolean
+  summary?: string
+}
 
 export function Result({ r, onDone }: { r: LessonResult; onDone: () => void }) {
   const me = useStore((s) => s.profile)!
@@ -23,6 +32,7 @@ export function Result({ r, onDone }: { r: LessonResult; onDone: () => void }) {
         ))}
       </div>
       <h1 className="pop">{r.title}</h1>
+      {r.summary && <p className="muted" style={{ margin: 0 }}>{r.summary}</p>}
       <div className="big-stars">
         {[1, 2, 3].map((n) => (
           <span key={n} className={n <= r.stars ? 'on pop' : ''} style={{ animationDelay: `${n * 0.15}s` }}>

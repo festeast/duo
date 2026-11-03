@@ -190,7 +190,7 @@ function FriendCard({ f, myDays }: { f: Friend; myDays: Record<string, number> }
       <div className="col" style={{ gap: 3, flex: 1, minWidth: 0 }}>
         <b className="ellipsis">{f.profile.name}</b>
         <span className="muted small">
-          {t.level} {lvl.level} · {lvl.name}
+          {t.level} {lvl.level} · 📚 {f.wordsLearned} {t.wordsShort}
         </span>
         <span className={`small ${today ? 'ok-text' : 'muted'}`}>{today ? t.studiedToday : t.notStudiedToday}</span>
       </div>

@@ -2,6 +2,7 @@ import type { RealtimeChannel, Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { dayKey, daysAgo, getState, setState, toast, type Friend } from './store'
 import type { CatLook, DialogSession, Profile } from './types'
+import type { WordState } from './srs'
 import { t } from '../i18n/kk'
 
 // ---------- Кіру / тіркелу ----------
@@ -37,16 +38,21 @@ function translateAuthError(msg: string) {
 export async function loadMe() {
   const uid = getState().session?.user.id
   if (!uid) return
-  const [p, prog, act] = await Promise.all([
+  const [p, prog, act, words] = await Promise.all([
     supabase.from('profiles').select().eq('id', uid).single(),
     supabase.from('lesson_progress').select('lesson_id, stars').eq('user_id', uid),
     supabase.from('activity').select('day, xp').eq('user_id', uid).gte('day', daysAgo(400)),
+    supabase.from('word_progress').select('word, stage, due_on, first_seen, last_seen, correct, wrong').eq('user_id', uid),
   ])
   setState({
     profile: (p.data as Profile) ?? null,
     progress: Object.fromEntries((prog.data ?? []).map((r) => [r.lesson_id, r.stars])),
     days: Object.fromEntries((act.data ?? []).map((r) => [r.day, r.xp])),
+    words: Object.fromEntries(((words.data ?? []) as (WordState & { word: string })[]).map(({ word, ...st }) => [word, st])),
+    // Кесте әлі жасалмаса (миграция орындалмаса) — қате емес, жай бос тізім
+    wordsLoaded: !words.error,
   })
+  if (words.error) console.warn('word_progress:', words.error.message)
 }
 
 export async function loadFriends() {
@@ -67,7 +73,7 @@ export async function loadFriends() {
   const [act, prog] = ids.length
     ? await Promise.all([
         supabase.from('activity').select('user_id, day, xp').in('user_id', ids).gte('day', daysAgo(400)),
-        supabase.from('lesson_progress').select('user_id').in('user_id', ids),
+        supabase.from('word_progress').select('user_id').in('user_id', ids),
       ])
     : [{ data: [] }, { data: [] }]
 
@@ -81,7 +87,7 @@ export async function loadFriends() {
       incoming: r.status === 'pending' && r.requester !== uid,
       profile,
       days,
-      lessonsDone: ((prog.data ?? []) as { user_id: string }[]).filter((x) => x.user_id === profile.id).length,
+      wordsLearned: ((prog.data ?? []) as { user_id: string }[]).filter((x) => x.user_id === profile.id).length,
     }
   })
   setState({ friends })
@@ -189,6 +195,29 @@ export async function buyItem(id: string, price: number) {
   return true
 }
 
+// ---------- Сөздер (аралықпен қайталау) ----------
+
+export async function saveWords(updates: Record<string, WordState>) {
+  const uid = getState().session?.user.id
+  if (!uid) return
+  setState((s) => ({ words: { ...s.words, ...updates } }))
+  const rows = Object.entries(updates).map(([word, st]) => ({ user_id: uid, word, ...st }))
+  const { error } = await supabase.from('word_progress').upsert(rows)
+  if (error) toast(t.errNetwork)
+}
+
+/** Күнделікті жаттығу, әңгіме т.б. үшін XP */
+export async function addXp(xp: number, coins: number) {
+  const day = dayKey()
+  setState((s) => ({
+    days: { ...s.days, [day]: (s.days[day] ?? 0) + xp },
+    profile: s.profile ? { ...s.profile, xp: s.profile.xp + xp, coins: s.profile.coins + coins } : s.profile,
+  }))
+  const { data, error } = await supabase.rpc('add_xp', { p_xp: xp, p_coins: coins, p_day: day })
+  if (error) toast(t.errNetwork)
+  else setState({ profile: data as Profile })
+}
+
 // ---------- Достар ----------
 
 export async function addFriend(code: string) {
@@ -289,7 +318,7 @@ async function handleSession(session: Session | null) {
   if (!session) {
     stopRealtime()
     stopPolling()
-    setState({ ready: true, profile: null, friends: [], invites: [], progress: {}, days: {} })
+    setState({ ready: true, profile: null, friends: [], invites: [], progress: {}, days: {}, words: {} })
     return
   }
   await Promise.all([loadMe(), loadFriends(), loadInvites()])

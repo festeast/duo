@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Cat } from '../components/Cat'
-import { Options, TileBuilder, type Status } from '../components/Exercises'
+import { Feedback, MicButton, Options, TileBuilder, type Status } from '../components/Exercises'
 import { DEFAULT_NAMES, dialogById, isNamedRole, personalize, type Dialog, type Line } from '../data/dialogs'
 import { t } from '../i18n/kk'
 import { completeLesson, dialogQuit, dialogSay, fetchDialog, watchDialog } from '../lib/api'
@@ -9,7 +9,7 @@ import { sfx } from '../lib/sound'
 import { speak } from '../lib/speech'
 import { levelOf, useStore } from '../lib/store'
 import type { CatLook, DialogSession } from '../lib/types'
-import { Feedback, type LessonResult } from './Lesson'
+import type { LessonResult } from './Result'
 import type { DialogStart } from './Together'
 
 const BOT = { name: 'Мысық', cat: { fur: 'cream', eyes: 'violet', head: 'flower' } as CatLook }
@@ -345,6 +345,13 @@ function MyTurn({ line, lines, level, look, onSay }: { line: Line; lines: Line[]
     <div className="my-turn slide-up">
       <span className="muted small">{t.yourTurn}</span>
       <div className="bubble kk-bubble">{line.kk}</div>
+      <MicButton
+        target={line.tr}
+        label={t.micAnswer}
+        onResult={(ok) => {
+          if (ok && !busy) void say(tries)
+        }}
+      />
       {useTiles ? (
         <TileBuilder tiles={tiles} picked={picked} setPicked={setPicked} locked={busy} />
       ) : (

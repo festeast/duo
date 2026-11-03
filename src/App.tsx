@@ -8,24 +8,28 @@ import { useStore } from './lib/store'
 import { configured } from './lib/supabase'
 import { Auth } from './screens/Auth'
 import { DialogPlay } from './screens/DialogPlay'
-import { Home } from './screens/Home'
-import { Lesson, type LessonResult } from './screens/Lesson'
 import { Profile } from './screens/Profile'
-import { Result } from './screens/Result'
+import { Result, type LessonResult } from './screens/Result'
+import { Session } from './screens/Session'
+import { Stories, StoryRead } from './screens/Stories'
+import { Today } from './screens/Today'
+import type { Plan } from './lib/srs'
 import { Setup } from './screens/Setup'
 import { Shop } from './screens/Shop'
 import { Together, type DialogStart } from './screens/Together'
 
-type Tab = 'learn' | 'together' | 'shop' | 'me'
+type Tab = 'learn' | 'read' | 'together' | 'shop' | 'me'
 type Screen =
   | { name: 'main'; tab: Tab }
   | { name: 'setup'; first?: boolean }
-  | { name: 'lesson'; id: string }
+  | { name: 'session'; plan: Plan }
+  | { name: 'story'; id: string }
   | { name: 'dialog'; start: DialogStart }
   | { name: 'result'; r: LessonResult; back: Tab }
 
 const TABS: [Tab, string, string][] = [
-  ['learn', '📚', t.tabLearn],
+  ['learn', '📅', t.tabLearn],
+  ['read', '📖', t.tabRead],
   ['together', '💞', t.tabTogether],
   ['shop', '🛍️', t.tabShop],
   ['me', '🐱', t.tabProfile],
@@ -75,8 +79,11 @@ export default function App() {
       case 'setup':
         body = <Setup first={screen.first} onDone={() => main(screen.first ? 'together' : 'me')} />
         break
-      case 'lesson':
-        body = <Lesson lessonId={screen.id} onExit={() => main()} onFinish={(r) => go({ name: 'result', r, back: 'learn' })} />
+      case 'session':
+        body = <Session plan={screen.plan} onExit={() => main()} onFinish={(r) => go({ name: 'result', r, back: 'learn' })} />
+        break
+      case 'story':
+        body = <StoryRead id={screen.id} onBack={() => main('read')} />
         break
       case 'dialog':
         body = (
@@ -95,7 +102,8 @@ export default function App() {
         body = (
           <>
             <Header onCat={() => main('me')} />
-            {screen.tab === 'learn' && <Home onLesson={(id) => go({ name: 'lesson', id })} />}
+            {screen.tab === 'learn' && <Today onStart={(plan) => go({ name: 'session', plan })} />}
+            {screen.tab === 'read' && <Stories onOpen={(id) => go({ name: 'story', id })} />}
             {screen.tab === 'together' && <Together onDialog={(start) => go({ name: 'dialog', start })} />}
             {screen.tab === 'shop' && <Shop />}
             {screen.tab === 'me' && <Profile onEdit={() => go({ name: 'setup' })} />}

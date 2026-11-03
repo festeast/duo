@@ -1,4 +1,5 @@
 import { ALL_LESSONS, type Lesson, type Pair } from '../data/course'
+import { SENTENCES, type Word } from '../data/words'
 
 export type Exercise =
   | { kind: 'choose'; dir: 'tr-kk' | 'kk-tr'; prompt: string; options: string[]; answer: string; speak?: string }
@@ -78,3 +79,21 @@ export function checkBuild(ex: Extract<Exercise, { kind: 'build' }>, picked: str
   const want = tokenize(ex.answer).map(normTr).join(' ')
   return picked.map(normTr).join(' ') === want
 }
+
+const fold = (s: string) => s.replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+const clean = (s: string) => normTr(s).replace(/[.,!?;:’'"]/g, '').replace(/\s+/g, ' ').trim()
+
+/** Жазылған жауапты тексеру: 'exact' | 'almost' (тек ş/ç/ğ т.б. қате) | 'wrong' */
+export function checkTyped(input: string, answer: string): 'exact' | 'almost' | 'wrong' {
+  const a = clean(input)
+  const b = clean(answer)
+  if (a === b) return 'exact'
+  if (fold(a) === fold(b)) return 'almost'
+  return 'wrong'
+}
+
+
+export function exampleFor(w: Word) {
+  return SENTENCES.find(([tr]) => tokenize(tr).some((x) => normTr(x) === normTr(w.tr) || (w.tr.length >= 4 && normTr(x).startsWith(normTr(w.tr).slice(0, -1)))))
+}
+

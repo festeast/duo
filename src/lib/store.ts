@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { DialogSession, Profile } from './types'
+import type { WordState } from './srs'
 
 export type Friend = {
   friendshipId: number
@@ -8,14 +9,16 @@ export type Friend = {
   incoming: boolean // маған келген сұраныс па
   profile: Profile
   days: Record<string, number>
-  lessonsDone: number
+  wordsLearned: number
 }
 
 export type State = {
   ready: boolean
   session: Session | null
   profile: Profile | null
-  progress: Record<string, number> // сабақ → жұлдыз
+  progress: Record<string, number> // сабақ/диалог → жұлдыз
+  words: Record<string, WordState> // түрікше сөз → қайталау күйі
+  wordsLoaded: boolean
   days: Record<string, number> // күн → XP
   friends: Friend[]
   invites: DialogSession[] // маған келген диалог шақырулары
@@ -38,6 +41,8 @@ let state: State = {
   session: null,
   profile: null,
   progress: {},
+  words: {},
+  wordsLoaded: false,
   days: {},
   friends: [],
   invites: [],
