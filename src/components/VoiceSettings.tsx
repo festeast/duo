@@ -11,6 +11,8 @@ import {
   speak,
   turkishVoices,
   voiceLabel,
+  voiceKey,
+  voiceTech,
 } from '../lib/speech'
 
 const SAMPLE = 'Merhaba! Birlikte Türkçe öğreniyoruz.'
@@ -24,7 +26,8 @@ export function VoiceSettings() {
   useEffect(() => onVoicesChanged(() => setVoices([...turkishVoices()])), [])
 
   if (!canSpeak()) return null
-  const selected = uri && voices.some((v) => v.voiceURI === uri) ? uri : voices[0]?.voiceURI
+  const match = voices.find((v) => voiceKey(v) === uri) ?? voices.find((v) => v.voiceURI === uri) ?? voices[0]
+  const selected = match ? voiceKey(match) : null
 
   return (
     <div className="card col">
@@ -39,15 +42,16 @@ export function VoiceSettings() {
         <div className="voice-list">
           {voices.map((v) => (
             <button
-              key={v.voiceURI}
-              className={`voice${v.voiceURI === selected ? ' on' : ''}`}
+              key={voiceKey(v)}
+              className={`voice${voiceKey(v) === selected ? ' on' : ''}`}
               onClick={() => {
-                setVoiceUri(v.voiceURI)
-                setUri(v.voiceURI)
+                setVoiceUri(voiceKey(v))
+                setUri(voiceKey(v))
                 speak(SAMPLE)
               }}
             >
-              {voiceLabel(v)}
+              <span>{voiceLabel(v)}</span>
+              <span className="voice-tech">{voiceTech(v)}</span>
             </button>
           ))}
         </div>
