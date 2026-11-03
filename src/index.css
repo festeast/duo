@@ -310,6 +310,10 @@ h3 { font-size: 19px; }
 }
 .dialog-tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
 .dialog-icon { font-size: 30px; }
+.level-tag { font-size: 13px; font-weight: 900; letter-spacing: 0.04em; margin-top: 4px; }
+.level-tag.l1 { color: var(--green-dark); }
+.level-tag.l2 { color: var(--orange); }
+.level-tag.l3 { color: var(--red); }
 
 .sheet-backdrop { position: fixed; inset: 0; background: rgba(20, 14, 30, 0.45); z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
 .sheet {
@@ -322,6 +326,13 @@ h3 { font-size: 19px; }
 .seg button { border: 0; background: none; padding: 10px; border-radius: 11px; font-weight: 800; color: var(--muted); }
 .seg button.on { background: var(--card); color: var(--text); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
 .choice { width: 100%; color: var(--text); }
+.seg.three { grid-template-columns: repeat(3, 1fr); }
+.voice-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.voice { border: 2px solid var(--line); background: var(--card-2); color: var(--text); border-radius: 12px; padding: 8px 12px; font-weight: 800; }
+.voice.on { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-dark); }
+.voice-help { font-size: 14px; color: var(--muted); }
+.voice-help summary { cursor: pointer; font-weight: 800; color: var(--blue); }
+.voice-help p { margin: 8px 0 0; line-height: 1.45; }
 .choice:disabled { opacity: 0.6; }
 
 .invite {

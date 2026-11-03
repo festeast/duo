@@ -24,6 +24,7 @@ export async function signOut() {
 }
 
 function translateAuthError(msg: string) {
+  if (/fetch|network/i.test(msg)) return t.errNetwork
   if (/invalid login/i.test(msg)) return t.errLogin
   if (/already registered|already exists/i.test(msg)) return t.errExists
   if (/password/i.test(msg)) return t.errPassword
@@ -120,12 +121,42 @@ export function startRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, refreshFriendsSoon)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'activity' }, refreshFriendsSoon)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'dialog_sessions', filter: `guest=eq.${uid}` }, () => void loadInvites())
-    .subscribe()
+    .subscribe((status) => {
+      // Байланыс үзілсе — біраздан соң қайта қосыламыз
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setTimeout(() => getState().session && startRealtime(), 5000)
+    })
+
+  // iPhone фонда тұрғанда байланыс үзіледі, сондықтан қосымшаға оралғанда және
+  // әр 15 секунд сайын жаңартып тұрамыз
+  if (!pollTimer) {
+    pollTimer = setInterval(refreshAll, 15000)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('focus', refreshAll)
+  }
+}
+
+let pollTimer: ReturnType<typeof setInterval> | undefined
+
+function refreshAll() {
+  if (!getState().session || document.visibilityState === 'hidden') return
+  void loadFriends()
+  void loadInvites()
+}
+
+function onVisible() {
+  if (document.visibilityState === 'visible') refreshAll()
 }
 
 export function stopRealtime() {
   if (channel) void supabase.removeChannel(channel)
   channel = null
+}
+
+function stopPolling() {
+  clearInterval(pollTimer)
+  pollTimer = undefined
+  document.removeEventListener('visibilitychange', onVisible)
+  window.removeEventListener('focus', refreshAll)
 }
 
 // ---------- Профиль ----------
@@ -257,6 +288,7 @@ async function handleSession(session: Session | null) {
   setState({ session })
   if (!session) {
     stopRealtime()
+    stopPolling()
     setState({ ready: true, profile: null, friends: [], invites: [], progress: {}, days: {} })
     return
   }

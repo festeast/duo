@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Cat } from '../components/Cat'
 import { Options, TileBuilder, type Status } from '../components/Exercises'
-import { dialogById, type Dialog, type Line } from '../data/dialogs'
+import { DEFAULT_NAMES, dialogById, isNamedRole, personalize, type Dialog, type Line } from '../data/dialogs'
 import { t } from '../i18n/kk'
 import { completeLesson, dialogQuit, dialogSay, fetchDialog, watchDialog } from '../lib/api'
 import { normTr, shuffle, tokenize } from '../lib/exercises'
@@ -34,8 +34,8 @@ export function DialogPlay({ start, onExit, onFinish }: { start: DialogStart; on
     }
   }, [start])
 
-  const dialog: Dialog | undefined = dialogById(start.kind === 'solo' ? start.dialogId : (session?.dialog_id ?? ''))
-  if (!dialog || (start.kind === 'online' && !session)) {
+  const base: Dialog | undefined = dialogById(start.kind === 'solo' ? start.dialogId : (session?.dialog_id ?? ''))
+  if (!base || (start.kind === 'online' && !session)) {
     return (
       <div className="screen center" style={{ justifyContent: 'center' }}>
         <p className="muted">{t.loading}</p>
@@ -48,7 +48,8 @@ export function DialogPlay({ start, onExit, onFinish }: { start: DialogStart; on
   let view: View
   if (start.kind === 'solo') {
     myRole = start.role
-    partner = BOT
+    // Мысық серіктің аты — әдепкі ат (Әділхан / Шырайлым)
+    partner = { ...BOT, name: DEFAULT_NAMES[start.role === 'A' ? 'B' : 'A'] }
     view = solo
   } else {
     const s = session!
@@ -59,6 +60,10 @@ export function DialogPlay({ start, onExit, onFinish }: { start: DialogStart; on
     partner = { name: p?.name ?? '…', cat: p?.cat ?? BOT.cat }
     view = { status: s.status, step: s.step, myTries: s.log.filter((l) => l.by === me.id).map((l) => l.tries) }
   }
+
+  // Диалогтағы {A}/{B} орнына нақты ойыншылардың аттары қойылады
+  const names = myRole === 'A' ? { A: me.name || DEFAULT_NAMES.A, B: partner.name } : { A: partner.name, B: me.name || DEFAULT_NAMES.B }
+  const dialog = personalize(base, names)
 
   return (
     <DialogView
@@ -153,7 +158,7 @@ function DialogView({
     if (status !== 'done') return null
     const mistakes = view.myTries.reduce((a, n) => a + Math.max(0, n - 1), 0)
     const stars = mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1
-    const xp = 15 + (mistakes === 0 ? 5 : 0)
+    const xp = 10 + dialog.level * 5 + (mistakes === 0 ? 5 : 0) // оңай 15, орта 20, қиын 25
     const mine = lines.filter((l) => l.role === myRole).length
     return {
       title: t.dialogComplete,
@@ -163,7 +168,7 @@ function DialogView({
       accuracy: Math.round((mine / (mine + mistakes)) * 100),
       levelUp: levelOf(myXp + xp).level > levelOf(myXp).level,
     }
-  }, [status, view.myTries, lines, myRole, myXp])
+  }, [status, view.myTries, lines, myRole, myXp, dialog.level])
 
   useEffect(() => {
     if (result && !finished.current) {
@@ -199,13 +204,13 @@ function DialogView({
         <div className="cast-person">
           <Cat look={people.A.cat} size={64} mood={line?.role === 'A' && status === 'active' ? 'happy' : 'normal'} />
           <b>{people.A.name}</b>
-          <span className="muted tiny">{dialog.roles.A}</span>
+          {!isNamedRole(dialogById(dialog.id)!.roles.A) && <span className="muted tiny">{dialog.roles.A}</span>}
         </div>
         <span className="vs">💬</span>
         <div className="cast-person">
           <Cat look={people.B.cat} size={64} flip mood={line?.role === 'B' && status === 'active' ? 'happy' : 'normal'} />
           <b>{people.B.name}</b>
-          <span className="muted tiny">{dialog.roles.B}</span>
+          {!isNamedRole(dialogById(dialog.id)!.roles.B) && <span className="muted tiny">{dialog.roles.B}</span>}
         </div>
       </div>
 
@@ -254,7 +259,7 @@ function DialogView({
         <div ref={chatEnd} />
       </div>
 
-      {myTurn && line && <MyTurn key={step} line={line} lines={lines} look={me.cat} onSay={onSay} />}
+      {myTurn && line && <MyTurn key={step} line={line} lines={lines} level={dialog.level} look={me.cat} onSay={onSay} />}
 
       {result && (
         <div className="feedback ok slide-up">
@@ -277,9 +282,10 @@ function DialogView({
 }
 
 /** Менің кезегім: репликаны құрастыру немесе таңдау */
-function MyTurn({ line, lines, look, onSay }: { line: Line; lines: Line[]; look: CatLook; onSay: (answer: string, tries: number) => Promise<void> }) {
+function MyTurn({ line, lines, level, look, onSay }: { line: Line; lines: Line[]; level: number; look: CatLook; onSay: (answer: string, tries: number) => Promise<void> }) {
   const tokens = useMemo(() => tokenize(line.tr), [line])
-  const useTiles = tokens.length <= 6
+  // Қиын диалогта ұзын сөйлемдерді де сөзбе-сөз құрастырасың
+  const useTiles = tokens.length <= [0, 6, 8, 10][level]
   const tiles = useMemo(() => {
     if (!useTiles) return []
     const others = lines.filter((l) => l !== line).flatMap((l) => tokenize(l.tr))

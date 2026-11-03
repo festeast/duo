@@ -1,4 +1,5 @@
 import { Cat } from '../components/Cat'
+import { VoiceSettings } from '../components/VoiceSettings'
 import { t } from '../i18n/kk'
 import { signOut } from '../lib/api'
 import { sfx } from '../lib/sound'
@@ -60,6 +61,7 @@ export function Profile({ onEdit }: { onEdit: () => void }) {
       >
         {sound ? '🔊' : '🔇'} {t.sound}: {sound ? t.on : t.off}
       </button>
+      <VoiceSettings />
       <div className="spacer" />
       <button className="btn ghost wide" onClick={() => void signOut()}>
         {t.signOut}

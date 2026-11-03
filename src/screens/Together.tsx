@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Cat } from '../components/Cat'
-import { DIALOGS, turnsOf, type Dialog } from '../data/dialogs'
+import { DEFAULT_NAMES, DIALOGS, LEVEL_NAMES, isNamedRole, personalize, turnsOf, type Dialog, type Level } from '../data/dialogs'
 import { t } from '../i18n/kk'
 import { acceptFriend, addFriend, inviteDialog, removeFriend } from '../lib/api'
 import { sfx } from '../lib/sound'
@@ -129,24 +129,32 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
         <p className="muted small" style={{ margin: 0 }}>
           {t.dialogsHint}
         </p>
-        <div className="dialog-grid">
-          {DIALOGS.map((d) => (
-            <button
-              key={d.id}
-              className="dialog-tile"
-              onClick={() => {
-                sfx.click()
-                setPicking(d)
-              }}
-            >
-              <span className="dialog-icon">{d.icon}</span>
-              <b>{d.title}</b>
-              <span className="muted small">
-                {d.roles.A} · {d.roles.B}
-              </span>
-            </button>
-          ))}
-        </div>
+        {([1, 2, 3] as Level[]).map((lvl) => (
+          <div key={lvl} className="col" style={{ gap: 8 }}>
+            <span className={`level-tag l${lvl}`}>{'●'.repeat(lvl)}{'○'.repeat(3 - lvl)} {LEVEL_NAMES[lvl]}</span>
+            <div className="dialog-grid">
+              {DIALOGS.filter((d) => d.level === lvl).map((d) => {
+                const shown = personalize(d, { A: me.name || DEFAULT_NAMES.A, B: accepted[0]?.profile.name || DEFAULT_NAMES.B })
+                return (
+                  <button
+                    key={d.id}
+                    className="dialog-tile"
+                    onClick={() => {
+                      sfx.click()
+                      setPicking(d)
+                    }}
+                  >
+                    <span className="dialog-icon">{d.icon}</span>
+                    <b>{d.title}</b>
+                    <span className="muted small">
+                      {shown.roles.A} · {shown.roles.B}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </section>
 
       {accepted.length > 0 && (
@@ -229,7 +237,7 @@ function DialogSheet({
         <div className="seg">
           {(['A', 'B'] as const).map((r) => (
             <button key={r} className={role === r ? 'on' : ''} onClick={() => setRole(r)}>
-              {dialog.roles[r]}
+              {isNamedRole(dialog.roles[r]) ? (r === 'A' ? t.roleFirst : t.roleSecond) : dialog.roles[r]}
             </button>
           ))}
         </div>
