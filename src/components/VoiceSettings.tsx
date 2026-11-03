@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { t } from '../i18n/kk'
 import {
+  CLOUD_VOICES,
   RATES,
   canSpeak,
   getRateId,
-  getVoiceUri,
+  getVoiceChoice,
   onVoicesChanged,
   setRateId,
   setVoiceUri,
@@ -20,14 +21,16 @@ const SAMPLE = 'Merhaba! Birlikte Türkçe öğreniyoruz.'
 /** Профильдегі түрікше дауыс баптауы */
 export function VoiceSettings() {
   const [voices, setVoices] = useState(turkishVoices())
-  const [uri, setUri] = useState(getVoiceUri())
+  const [uri, setUri] = useState(getVoiceChoice())
   const [rate, setRate] = useState(getRateId())
 
   useEffect(() => onVoicesChanged(() => setVoices([...turkishVoices()])), [])
 
-  if (!canSpeak()) return null
-  const match = voices.find((v) => voiceKey(v) === uri) ?? voices.find((v) => v.voiceURI === uri) ?? voices[0]
-  const selected = match ? voiceKey(match) : null
+  const choose = (key: string) => {
+    setVoiceUri(key)
+    setUri(key)
+    speak(SAMPLE)
+  }
 
   return (
     <div className="card col">
@@ -38,17 +41,24 @@ export function VoiceSettings() {
         </button>
       </div>
 
-      {voices.length > 0 ? (
+      <span className="muted small">{t.voiceCloud}</span>
+      <div className="voice-list">
+        {CLOUD_VOICES.map((v) => (
+          <button key={v.id} className={`voice cloud${uri === v.id ? ' on' : ''}`} onClick={() => choose(v.id)}>
+            <span>{v.label}</span>
+            <span className="voice-tech">Google · {t.voiceBest}</span>
+          </button>
+        ))}
+      </div>
+
+      <span className="muted small">{t.voiceDevice}</span>
+      {canSpeak() && voices.length > 0 ? (
         <div className="voice-list">
           {voices.map((v) => (
             <button
               key={voiceKey(v)}
-              className={`voice${voiceKey(v) === selected ? ' on' : ''}`}
-              onClick={() => {
-                setVoiceUri(voiceKey(v))
-                setUri(voiceKey(v))
-                speak(SAMPLE)
-              }}
+              className={`voice${voiceKey(v) === uri ? ' on' : ''}`}
+              onClick={() => choose(voiceKey(v))}
             >
               <span>{voiceLabel(v)}</span>
               <span className="voice-tech">{voiceTech(v)}</span>

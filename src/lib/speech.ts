@@ -1,5 +1,17 @@
-// Түрікше айтылым: телефондағы кірістірілген түрік дауыстары қолданылады.
+// Түрікше айтылым.
+// 1) Негізгі: Google Chirp3-HD дауысымен алдын ала жазылған аудиофайлдар (public/audio).
+// 2) Файлы жоқ мәтін (мысалы, ойыншылардың аттары) — телефонның өз түрік дауысымен.
 // Пайдаланушы Профильде дауыс пен жылдамдықты таңдай алады.
+
+import manifest from '../data/audio-manifest.json'
+import { audioKey } from './audioKey'
+
+const AUDIO_KEYS = new Set<string>(manifest.keys)
+export const CLOUD_VOICES = [
+  { id: 'g:female', dir: 'female', label: '👩 Әйел дауысы' },
+  { id: 'g:male', dir: 'male', label: '👨 Ер дауысы' },
+] as const
+const DEFAULT_VOICE = 'g:female'
 
 const VOICE_KEY = 'duo-voice'
 const RATE_KEY = 'duo-rate'
@@ -87,16 +99,87 @@ export function voiceTech(v: SpeechSynthesisVoice) {
 /** Дауыстың бірегей кілті: кейбір iPhone-да екі дауыстың voiceURI-і бірдей болады */
 export const voiceKey = (v: SpeechSynthesisVoice) => `${v.voiceURI}|${v.name}`
 export const getVoiceUri = () => read(VOICE_KEY)
+export const getVoiceChoice = () => read(VOICE_KEY) ?? DEFAULT_VOICE
 export const setVoiceUri = (key: string) => write(VOICE_KEY, key)
 export const getRateId = () => read(RATE_KEY) ?? 'normal'
 export const setRateId = (id: string) => write(RATE_KEY, id)
 
+// ---------- Аудиофайлдар ----------
+
+let player: HTMLAudioElement | null = null
+
+function getPlayer() {
+  if (!player && typeof Audio !== 'undefined') {
+    player = new Audio()
+    player.preload = 'auto'
+  }
+  return player
+}
+
+// iPhone дыбысты тек пайдаланушы басқаннан кейін ғана ойнатуға рұқсат береді.
+// Бірінші басқанда ойнатқышты үнсіз «оятып» қоямыз.
+if (typeof document !== 'undefined') {
+  const unlock = () => {
+    const p = getPlayer()
+    const first = manifest.keys[0]
+    if (p && first && !p.src) {
+      p.muted = true
+      p.src = `/audio/female/${first}.mp3`
+      void p.play().then(
+        () => {
+          p.pause()
+          p.muted = false
+        },
+        () => {
+          p.muted = false
+        },
+      )
+    }
+    document.removeEventListener('pointerdown', unlock)
+  }
+  document.addEventListener('pointerdown', unlock)
+}
+
+function fileFor(text: string) {
+  for (const t of [text, text.toLocaleLowerCase('tr')]) {
+    const k = audioKey(t)
+    if (AUDIO_KEYS.has(k)) return k
+  }
+  return null
+}
+
+function stopAll() {
+  if (player) player.pause()
+  if (canSpeak()) speechSynthesis.cancel()
+}
+
 function currentVoice() {
   const key = getVoiceUri()
+  if (key?.startsWith('g:')) return voices[0] ?? null
   return voices.find((v) => voiceKey(v) === key) ?? voices.find((v) => v.voiceURI === key) ?? voices[0] ?? null
 }
 
 export function speak(text: string, slow = false) {
+  stopAll()
+  const choice = getVoiceUri() ?? DEFAULT_VOICE
+  const rate = RATES.find((r) => r.id === getRateId())?.value ?? 0.85
+  const cloud = CLOUD_VOICES.find((v) => v.id === choice)
+  const key = cloud ? fileFor(text) : null
+  const p = getPlayer()
+  if (cloud && key && p) {
+    p.muted = false
+    p.src = `/audio/${cloud.dir}/${key}.mp3`
+    // Жазылған дауыс табиғи жылдамдықта: «Қалыпты» = 1.0
+    p.playbackRate = slow ? 0.7 : rate / 0.85
+    ;(p as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true
+    void p.play().catch(() => speakDevice(text, slow))
+    return
+  }
+  speakDevice(text, slow)
+}
+
+/** Телефонның өз дауысымен айту */
+function speakDevice(text: string, slow: boolean) {
   if (!canSpeak()) return
   speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)

@@ -185,6 +185,9 @@ export const t = {
   voiceTitle: 'Түрікше дауыс',
   voiceTest: 'Тыңдау',
   voiceSpeed: 'Сөйлеу жылдамдығы',
+  voiceCloud: 'Сапалы дауыс (ұсынамыз)',
+  voiceBest: 'табиғи',
+  voiceDevice: 'iPhone дауыстары',
   voiceNone: 'Телефонда түрік дауысы табылмады. Төмендегі нұсқаулық бойынша жүктеп ал.',
   voiceMoreTitle: 'Дауысты қалай жақсартуға болады?',
   voiceMoreText:
