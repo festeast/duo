@@ -28,12 +28,16 @@ const phrases = [
 ]
 const unique = [...new Map(phrases.map((p) => [audioKey(p), p])).entries()]
 
+// Chirp3-HD бір сөзді (ay, ev, o…) жеке жібергенде кейде «ақ шу» қайтарады.
+// Сондықтан қысқа мәтінді бас әріппен және нүктемен жібереміз: «Ay.»
+const ttsText = (t) => (/[.!?…]$/.test(t) ? t : t[0].toLocaleUpperCase('tr') + t.slice(1) + '.')
+
 async function synth(text, voice) {
   for (let attempt = 1; attempt <= 8; attempt++) {
     const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ input: { text }, voice: { languageCode: 'tr-TR', name: voice }, audioConfig: { audioEncoding: 'MP3' } }),
+      body: JSON.stringify({ input: { text: ttsText(text) }, voice: { languageCode: 'tr-TR', name: voice }, audioConfig: { audioEncoding: 'MP3' } }),
     })
     const data = await res.json()
     if (data.audioContent) return Buffer.from(data.audioContent, 'base64')
@@ -46,6 +50,11 @@ async function synth(text, voice) {
 
 let made = 0
 let chars = 0
+// Манифест: әйел дауысының файлы бар фразалар (жұмыс барысында жаңарып отырады)
+const writeManifest = () => {
+  const keys = unique.map(([k]) => k).filter((k) => existsSync(`public/audio/female/${k}.mp3`)).sort()
+  writeFileSync('src/data/audio-manifest.json', JSON.stringify({ voices: VOICES, keys }) + '\n')
+}
 for (const [id, voice] of Object.entries(VOICES)) {
   const dir = `public/audio/${id}`
   mkdirSync(dir, { recursive: true })
@@ -60,9 +69,10 @@ for (const [id, voice] of Object.entries(VOICES)) {
       }),
     )
     process.stdout.write(`\r${id}: ${Math.min(i + 4, todo.length)}/${todo.length}`)
+    if (i % 100 === 0) writeManifest()
   }
   process.stdout.write('\n')
 }
 
-writeFileSync('src/data/audio-manifest.json', JSON.stringify({ voices: VOICES, keys: unique.map(([k]) => k).sort() }) + '\n')
+writeManifest()
 console.log(`Дайын: ${made} жаңа файл, ${chars} таңба. Барлығы: ${unique.length} фраза.`)

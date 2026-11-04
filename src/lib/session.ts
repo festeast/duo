@@ -4,6 +4,7 @@ import { normTr, shuffle, tokenize } from './exercises'
 import type { Plan, WordState } from './srs'
 
 export type Ex =
+  | { kind: 'check'; word: Word; options: string[]; answer: string }
   | { kind: 'intro'; word: Word }
   | { kind: 'choose'; dir: 'tr-kk' | 'kk-tr'; word: Word; prompt: string; options: string[]; answer: string; speak?: string }
   | { kind: 'listen'; word: Word; options: string[]; answer: string }
@@ -117,6 +118,14 @@ export function buildSession(plan: Plan, states: Record<string, WordState>): Ex[
   const sh = chosen.find((s) => s.uses.some((u) => freshSet.has(u))) ?? chosen[0]
   if (sh) mixed.push({ kind: 'shadow', tr: sh.tr, kk: sh.kk })
 
-  return [...intro, ...shuffle(mixed)]
+  // Тесттен кейінгі «тексерілмеген» сөздер: жылдам «білесің бе?» сұрағы (басында)
+  const checks: Ex[] = plan.check.map((w) => ({
+    kind: 'check',
+    word: w,
+    answer: w.kk,
+    options: shuffle([w.kk, ...distract(w.kk, WORD_LIST.filter((x) => x.level === w.level).map((x) => x.kk))]),
+  }))
+
+  return [...checks, ...intro, ...shuffle(mixed)]
 }
 

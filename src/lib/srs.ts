@@ -6,7 +6,7 @@ import { BANDS, SENTENCE_BANK, WORD_LIST, type Word } from '../data/words'
 import { dayKey } from './store'
 
 export type WordState = {
-  stage: number // 1..7
+  stage: number // 0 — тестпен «білемін» деп белгіленген, бірақ әлі тексерілмеген; 1..7 — бекігені; -1 — өшірілген
   due_on: string // 'YYYY-MM-DD' — келесі қайталау күні
   first_seen: string
   last_seen: string
@@ -50,11 +50,16 @@ export function daysBetween(from: string, to: string) {
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
 
-export type Plan = { review: Word[]; fresh: Word[]; dueTotal: number; doneToday: number }
+export type Plan = { review: Word[]; fresh: Word[]; check: Word[]; dueTotal: number; doneToday: number; unverified: number }
+
+export const MAX_CHECKS = 15 // күніне тексерілетін «тексерілмеген» сөздер
+
+/** Сөз үйренілген бе (тексерілмегендер мен өшірілгендерді есептемейміз) */
+export const isLearned = (s?: WordState) => !!s && s.stage >= 1
 
 /** Бүгінгі жоспар: қайталау керек сөздер (≤10) + бірнеше жаңа сөз (әдепкі 5) */
 export function todayPlan(states: Record<string, WordState>, extraNew = 0, today = dayKey()): Plan {
-  const due = WORD_LIST.filter((w) => states[w.tr] && states[w.tr].due_on <= today).sort((a, b) =>
+  const due = WORD_LIST.filter((w) => isLearned(states[w.tr]) && states[w.tr].due_on <= today).sort((a, b) =>
     states[a.tr].due_on.localeCompare(states[b.tr].due_on),
   )
   const reviewedToday = WORD_LIST.filter((w) => {
@@ -64,16 +69,25 @@ export function todayPlan(states: Record<string, WordState>, extraNew = 0, today
   const newToday = WORD_LIST.filter((w) => states[w.tr]?.first_seen === today).length
 
   const review = due.slice(0, Math.max(0, MAX_REVIEWS - reviewedToday))
+  // Тест бойынша «білемін» деп белгіленген сөздерді біртіндеп тексереміз
+  const unverifiedAll = WORD_LIST.filter((w) => states[w.tr]?.stage === 0)
+  // Бүгін тексерілгендер: білді (stage 4, 1/0) немесе білмеді (stage 1, 0/1)
+  const checkedToday = WORD_LIST.filter((w) => {
+    const s = states[w.tr]
+    if (!s || s.last_seen !== today || s.first_seen === today) return false
+    return (s.stage === 4 && s.correct === 1 && s.wrong === 0) || (s.stage === 1 && s.correct === 0 && s.wrong === 1)
+  }).length
+  const check = unverifiedAll.filter((w) => states[w.tr].due_on <= today).slice(0, Math.max(0, MAX_CHECKS - checkedToday))
   const freshCount = Math.max(0, getNewPerDay() + extraNew - newToday)
   // Жаңа сөздер деңгей ретімен, бірақ келесі 12 сөздің ішінен бүгінгі қайталанатын
   // сөздермен бір сөйлемде кездесетіндері таңдалады (сонда екеуі бірге жаттығады)
   const fresh = pickFresh(states, review, freshCount)
 
-  return { review, fresh, dueTotal: due.length, doneToday: reviewedToday + newToday }
+  return { review, fresh, check, dueTotal: due.length, doneToday: reviewedToday + newToday, unverified: unverifiedAll.length }
 }
 
 function pickFresh(states: Record<string, WordState>, review: Word[], n: number): Word[] {
-  const window = WORD_LIST.filter((w) => !states[w.tr]).slice(0, Math.max(n, 30))
+  const window = WORD_LIST.filter((w) => !states[w.tr] || states[w.tr].stage < 0).slice(0, Math.max(n, 30))
   if (!review.length || window.length <= n) return window.slice(0, n)
   const reviewSet = new Set(review.map((w) => w.tr))
   const scored = window.map((w, i) => {
@@ -100,19 +114,31 @@ export function placementStates(passedBands: number, wrong: Set<string>, today =
   BANDS.slice(0, passedBands).forEach((band, bi) => {
     band.words.forEach((w, i) => {
       if (wrong.has(w.tr)) return // тестте қате жауап берілген сөз — жаңа сөз ретінде үйретіледі
-      // Төмен деңгей сөздері кейінірек, жоғары деңгейдікі ертерек тексеріледі
-      const spread = 7 + ((i * 37 + bi * 11) % 50)
-      updates[w.tr] = { stage: 4, due_on: addDays(today, spread), first_seen: yesterday, last_seen: yesterday, correct: 1, wrong: 0 }
+      // Тексерілмеген сөз: алдағы 3 апта ішінде күн сайын біртіндеп тексеріледі
+      const spread = (i * 7 + bi * 3) % 21
+      updates[w.tr] = { stage: 0, due_on: addDays(today, spread), first_seen: yesterday, last_seen: yesterday, correct: 0, wrong: 0 }
     })
   })
   return updates
+}
+
+/** Тексеру нәтижесі: білсе — сөз бекиді (2 аптадан кейін қайталау), білмесе — үйренуге түседі */
+export function gradeCheck(prev: WordState, ok: boolean, today = dayKey()): WordState {
+  return ok
+    ? { ...prev, stage: 4, due_on: addDays(today, INTERVALS[4]), last_seen: today, correct: 1, wrong: 0 }
+    : { ...prev, stage: 1, due_on: addDays(today, 1), last_seen: today, correct: 0, wrong: 1 }
+}
+
+/** Ескі тест «білемін» деп бірден бекіткен сөздер (stage 4, correct 1, wrong 0) — оларды тексерілмеген етеміз */
+export function legacyPlaced(states: Record<string, WordState>) {
+  return Object.entries(states).filter(([, s]) => s.stage === 4 && s.correct === 1 && s.wrong === 0 && s.first_seen === s.last_seen)
 }
 
 /** Сөздердің қай деңгейге дейін бекігені (Профильде көрсету үшін) */
 export function estimatedBand(states: Record<string, WordState>) {
   let lvl = -1
   BANDS.forEach((b, i) => {
-    const known = b.words.filter((w) => states[w.tr]).length
+    const known = b.words.filter((w) => states[w.tr] && states[w.tr].stage >= 0).length
     if (known / b.words.length >= 0.7 && lvl === i - 1) lvl = i
   })
   return lvl

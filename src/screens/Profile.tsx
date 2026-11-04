@@ -4,9 +4,9 @@ import { BANDS } from '../data/words'
 import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
 import { useState } from 'react'
 import { t } from '../i18n/kk'
-import { signOut } from '../lib/api'
+import { resetPlacement, signOut } from '../lib/api'
 import { sfx } from '../lib/sound'
-import { levelOf, setState, streakOf, useStore } from '../lib/store'
+import { levelOf, setState, streakOf, toast, useStore } from '../lib/store'
 
 export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlacement: () => void }) {
   const [perDay, setPerDay] = useState(getNewPerDay())
@@ -16,7 +16,8 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
   const sound = useStore((s) => s.sound)
   if (!me) return null
   const lvl = levelOf(me.xp)
-  const learned = Object.keys(words).length
+  const learned = Object.values(words).filter((w) => w.stage >= 1).length
+  const unverified = Object.values(words).filter((w) => w.stage === 0).length
 
   return (
     <div className="screen">
@@ -77,6 +78,18 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
         <button className="link-btn" onClick={onPlacement}>
           🎯 {t.placeRetake}
         </button>
+        {unverified > 0 && (
+          <button
+            className="link-btn danger"
+            onClick={async () => {
+              if (!confirm(t.placeResetConfirm)) return
+              const n = await resetPlacement()
+              toast(t.placeResetDone(n))
+            }}
+          >
+            🗑️ {t.placeReset} ({unverified})
+          </button>
+        )}
       </div>
 
       <button className="btn blue wide" onClick={onEdit}>

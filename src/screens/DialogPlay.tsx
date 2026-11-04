@@ -6,8 +6,9 @@ import { t } from '../i18n/kk'
 import { completeLesson, dialogQuit, dialogSay, fetchDialog, watchDialog } from '../lib/api'
 import { normTr, shuffle, tokenize } from '../lib/exercises'
 import { sfx } from '../lib/sound'
-import { speak } from '../lib/speech'
-import { levelOf, useStore } from '../lib/store'
+import { speak, stopSpeaking } from '../lib/speech'
+import { levelOf, toast, useStore } from '../lib/store'
+import { clearSolo, getSolo, setSolo as saveSolo } from '../lib/dialogProgress'
 import type { CatLook, DialogSession } from '../lib/types'
 import type { LessonResult } from './Result'
 import type { DialogStart } from './Together'
@@ -20,7 +21,19 @@ export function DialogPlay({ start, onExit, onFinish }: { start: DialogStart; on
   const me = useStore((s) => s.profile)!
   const friends = useStore((s) => s.friends)
   const [session, setSession] = useState<DialogSession | null>(null)
-  const [solo, setSolo] = useState<View>({ status: 'active', step: 0, myTries: [] })
+  // Мысықпен ойнағанда — бұрынғы прогресті жалғастырамыз
+  const [solo, setSolo] = useState<View>(() => {
+    const saved = start.kind === 'solo' ? getSolo(start.dialogId) : null
+    return saved && start.kind === 'solo' && saved.role === start.role
+      ? { status: 'active', step: saved.step, myTries: saved.myTries }
+      : { status: 'active', step: 0, myTries: [] }
+  })
+  useEffect(() => {
+    if (start.kind !== 'solo') return
+    if (solo.status === 'done') clearSolo(start.dialogId)
+    else if (solo.step > 0) saveSolo(start.dialogId, { role: start.role, step: solo.step, myTries: solo.myTries, updated: Date.now() })
+  }, [solo, start])
+  useEffect(() => () => stopSpeaking(), [])
 
   // Онлайн: сессияны жүктеп, өзгерістерін тыңдаймыз
   useEffect(() => {
@@ -49,7 +62,9 @@ export function DialogPlay({ start, onExit, onFinish }: { start: DialogStart; on
   if (start.kind === 'solo') {
     myRole = start.role
     // Мысық серіктің аты — әдепкі ат (Әділхан / Шырайлым)
-    partner = { ...BOT, name: DEFAULT_NAMES[start.role === 'A' ? 'B' : 'A'] }
+    // Мысық серіктің аты — әдепкі ат (Әділхан / Шырайлым), бірақ ойыншының атымен бірдей болмауы керек
+    const other = DEFAULT_NAMES[start.role === 'A' ? 'B' : 'A']
+    partner = { ...BOT, name: other === me.name ? DEFAULT_NAMES[start.role] : other }
     view = solo
   } else {
     const s = session!
@@ -85,7 +100,9 @@ export function DialogPlay({ start, onExit, onFinish }: { start: DialogStart; on
       }}
       onBotSay={() => setSolo((v) => ({ ...v, step: v.step + 1, status: v.step + 1 >= dialog.lines.length ? 'done' : 'active' }))}
       onQuit={() => {
-        if (start.kind === 'online') void dialogQuit(start.sessionId)
+        // Шақыру әлі қабылданбаса — тоқтатамыз; басталған диалог кідіртіледі (кейін жалғастыруға болады)
+        if (start.kind === 'online' && session?.status === 'invited') void dialogQuit(start.sessionId)
+        else if (view.status === 'active' && view.step > 0) toast(t.dialogPaused)
         onExit()
       }}
       onFinish={onFinish}
@@ -187,7 +204,7 @@ function DialogView({
           className="icon-btn"
           aria-label={t.quit}
           onClick={() => {
-            if (status === 'done' || status === 'declined' || confirm(t.quitConfirm)) onQuit()
+            if (status !== 'active' || step === 0 || confirm(t.pauseConfirm)) onQuit()
           }}
         >
           ✕

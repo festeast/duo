@@ -22,6 +22,7 @@ export type State = {
   days: Record<string, number> // күн → XP
   friends: Friend[]
   invites: DialogSession[] // маған келген диалог шақырулары
+  activeDialogs: DialogSession[] // кідіртілген (жалғастыруға болатын) диалогтар
   sound: boolean
   toast: string | null
 }
@@ -46,6 +47,7 @@ let state: State = {
   days: {},
   friends: [],
   invites: [],
+  activeDialogs: [],
   sound: loadSound(),
   toast: null,
 }

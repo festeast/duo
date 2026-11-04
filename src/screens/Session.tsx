@@ -8,8 +8,8 @@ import { addXp, saveWords } from '../lib/api'
 import { checkTyped, normTr, shuffle, tokenize } from '../lib/exercises'
 import { canListen } from '../lib/listen'
 import { sfx } from '../lib/sound'
-import { speak } from '../lib/speech'
-import { grade, type Plan, type WordState } from '../lib/srs'
+import { speak, stopSpeaking } from '../lib/speech'
+import { grade, gradeCheck, type Plan, type WordState } from '../lib/srs'
 import { getState, levelOf, useStore } from '../lib/store'
 import type { LessonResult } from './Result'
 
@@ -47,11 +47,15 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
   const [note, setNote] = useState<string | undefined>()
   const [praise, setPraise] = useState('')
   const [failed, setFailed] = useState<Set<string>>(new Set())
+  const [checkFailed, setCheckFailed] = useState<Set<string>>(new Set())
   const [mistakes, setMistakes] = useState(0)
   const [solved, setSolved] = useState(0)
 
   const ex = queue[pos]
   const total = initial.length
+
+  // Экраннан шыққанда дыбысты тоқтатамыз
+  useEffect(() => () => stopSpeaking(), [])
 
   useEffect(() => {
     if (ex?.kind === 'listen') speak(ex.answer)
@@ -79,6 +83,17 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
   }
 
   const check = () => {
+    if (ex.kind === 'check') {
+      // Тексеру: қате болса — сөз үйренуге түседі (қайта сұралмайды)
+      const ok = sel === ex.answer
+      if (ok) speak(ex.word.tr)
+      if (!ok) setCheckFailed((f) => new Set([...f, ex.word.tr]))
+      if (ok) return succeed()
+      sfx.wrong()
+      setMistakes((x) => x + 1)
+      setStatus('no')
+      return
+    }
     if (ex.kind === 'choose' || ex.kind === 'listen') return sel !== null && normTr(sel) === normTr(ex.answer) ? succeed() : fail()
     if (ex.kind === 'sentence') {
       if (sel === ex.answer) speak(ex.prompt)
@@ -102,6 +117,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     const states = getState().words
     const updates: Record<string, WordState> = {}
     for (const w of words) updates[w.tr] = grade(states[w.tr], !failed.has(w.tr))
+    for (const w of plan.check) if (states[w.tr]) updates[w.tr] = gradeCheck(states[w.tr], !checkFailed.has(w.tr))
     void saveWords(updates)
     const perfect = mistakes === 0
     const xp = Math.min(40, 10 + words.length + (perfect ? 5 : 0))
@@ -114,11 +130,15 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       coins,
       accuracy: Math.round((total / (total + mistakes)) * 100),
       levelUp: levelOf(me.xp + xp).level > levelOf(me.xp).level,
-      summary: t.sessionSummary(plan.fresh.length, plan.review.length),
+      summary:
+        t.sessionSummary(plan.fresh.length, plan.review.length) +
+        (plan.check.length ? ` · 🔍 ${plan.check.length - checkFailed.size}/${plan.check.length} ${t.checkKnown}` : ''),
     })
   }
 
   const next = () => {
+    // Алдыңғы тапсырманың дыбысы келесіге өтпеуі керек
+    stopSpeaking()
     sfx.click()
     if (pos + 1 >= queue.length) return finish()
     setPos(pos + 1)
@@ -131,7 +151,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
 
   const canCheck =
     (ex.kind === 'build' && picked.length > 0) ||
-    ((ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence') && sel !== null) ||
+    ((ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence' || ex.kind === 'check') && sel !== null) ||
     (ex.kind === 'type' && typed.trim().length > 0)
   const answerText = 'answer' in ex ? ex.answer : ''
 
@@ -147,6 +167,33 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       </div>
 
       <div key={ex.key} className="col pop" style={{ flex: 1, gap: 18 }}>
+        {ex.kind === 'check' && (
+          <>
+            <h3 className="ex-title">🔍 {t.checkTitle}</h3>
+            <p className="muted small" style={{ margin: 0 }}>
+              {t.checkHint}
+            </p>
+            <div className="card row" style={{ justifyContent: 'space-between' }}>
+              <span className="prompt">{ex.word.tr}</span>
+              <SpeakButtons text={ex.word.tr} />
+            </div>
+            <div className="spacer" />
+            <Options options={ex.options} sel={sel} setSel={setSel} status={status} answer={ex.answer} />
+            {status === 'idle' && (
+              <button
+                className="option dont-know"
+                onClick={() => {
+                  setSel('∅')
+                  setCheckFailed((f) => new Set([...f, ex.word.tr]))
+                  setMistakes((x) => x + 1)
+                  setStatus('no')
+                }}
+              >
+                🤷 {t.dontKnow}
+              </button>
+            )}
+          </>
+        )}
         {ex.kind === 'intro' && (
           <>
             <WordCard w={ex.word} />

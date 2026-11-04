@@ -3,9 +3,14 @@
 // Сөйлемдер банкі: әр сөйлемде қай сөздер кездесетіні автоматты анықталады —
 // сонда жаңа сөзді қайталанатын сөздермен бір сөйлемде көрсете аламыз.
 import { COURSE } from './course'
-import { DIALOGS } from './dialogs'
+import { DIALOGS, EPISODES } from './dialogs'
 import { STORIES } from './stories'
 import { BRIDGES, EXTRA_EXAMPLES, VOCAB, VOCAB_COGNATES } from './vocab'
+import { VOCAB_A2 } from './vocab-a2'
+import { VOCAB_B1 } from './vocab-b1'
+import { VOCAB_B2 } from './vocab-b2'
+import { VOCAB_C1 } from './vocab-c1'
+import { VOCAB_EXTRA } from './vocab-extra'
 
 export type Cognate = { kind: 'same' | 'false'; kk: string; note?: string }
 
@@ -13,7 +18,7 @@ export type Word = {
   tr: string // түрікше (бұл сөздің id-і де)
   kk: string
   topic: string
-  level: 1 | 2 | 3 | 4 // 1 — A1, 2 — A2, 3 — B1, 4 — B2
+  level: 1 | 2 | 3 | 4 | 5 // 1 — A1, 2 — A2, 3 — B1, 4 — B2, 5 — C1
   order: number // үйрену реті
   emoji?: string
   cognate?: Cognate
@@ -89,6 +94,42 @@ const COGNATES: Record<string, Cognate> = {
   ...VOCAB_COGNATES,
 }
 
+// ---------- Кеңейтілген сөздік (мәтін форматында) ----------
+
+type Level = Word['level']
+type Parsed = { level: Level; topic: string; tr: string; kk: string; ex?: [string, string] }
+
+function parseVocab(text: string, defaultLevel: Level): Parsed[] {
+  const out: Parsed[] = []
+  let topic = ''
+  let level = defaultLevel
+  for (const raw of text.split('\n')) {
+    const line = raw.trim()
+    if (!line) continue
+    if (line.startsWith('## ')) {
+      // «## тақырып» немесе «## 4 | тақырып»
+      const head = line.slice(3).split(' | ')
+      if (head.length === 2) {
+        level = Number(head[0]) as Level
+        topic = head[1].trim()
+      } else topic = head[0].trim()
+      continue
+    }
+    const [tr, kk, exTr, exKk] = line.split(' | ').map((x) => x?.trim())
+    if (!tr || !kk) continue
+    out.push({ level, topic, tr, kk, ex: exTr && exKk ? [exTr, exKk] : undefined })
+  }
+  return out
+}
+
+const EXTENDED: Parsed[] = [
+  ...parseVocab(VOCAB_A2, 2),
+  ...parseVocab(VOCAB_B1, 3),
+  ...parseVocab(VOCAB_B2, 4),
+  ...parseVocab(VOCAB_C1, 5),
+  ...parseVocab(VOCAB_EXTRA, 3),
+]
+
 // ---------- Сөздер тізімі ----------
 
 let order = 0
@@ -101,7 +142,10 @@ const RAW: Word[] = [
   ...VOCAB.flatMap((g) =>
     g.words.map(([tr, kk, emoji]) => ({ tr, kk, topic: g.topic, level: g.level, order: order++, emoji, cognate: COGNATES[tr] })),
   ),
+  ...EXTENDED.map((p) => ({ tr: p.tr, kk: p.kk, topic: p.topic, level: p.level, order: order++, emoji: EMOJI[p.tr], cognate: COGNATES[p.tr] })),
 ]
+// Деңгей бойынша реттеу (сөздік бірнеше файлдан жиналады)
+RAW.sort((a, b) => a.level - b.level || a.order - b.order)
 
 // Бір сөз екі жерде кездессе, біріншісін қалдырамыз
 const seen = new Set<string>()
@@ -124,14 +168,16 @@ export const tokensOf = (s: string) =>
 const SOFT: Record<string, string[]> = { p: ['b'], ç: ['c'], t: ['d'], k: ['ğ', 'g'] }
 const VOWELS = 'aeıioöuü'
 // Зат есімнен кейінгі жиі қосымшалар (көптік, тәуелдік, септік, жіктік)
-const NOUN_SUF = /^(l[ae]r)?(m|n|n?[ıiuü]n|y?[ıiuü]m|y?[ıiuü]z|s?[ıiuü]|y[ıiuü]|[ıiuü]m[ıiuü]z|[ıiuü]n[ıiuü]z|m[ıiuü]z|n[ıiuü]z|n?[dt][ae]n?|y?[ae]|n[ae]|y?l[ae]|d[ıiuü]r|k[ıiuü]|s[ıiuü]n)*$/
+const NOUN_SUF = /^(l[ae]r)?(m|n|n?[ıiuü]n|y?[ıiuü]m|y?[ıiuü]z|s?[ıiuü]|y[ıiuü]|[ıiuü]m[ıiuü]z|[ıiuü]n[ıiuü]z|m[ıiuü]z|n[ıiuü]z|n?[dt][ae]n?|y?[ae]|n[ae]|y?l[ae]|d[ıiuü]r|k[ıiuü]|s[ıiuü]n|y?[dt][ıiuü]|y?m[ıiuü]ş)*$/
+// Сөзжасам қосымшалары (ұзын түбірлерге): başarı-lı, deneyim-li, bilim-sel
+const DERIV = /^(l[ıiuü]|s[ıiuü]z|c[ıiuü]|ç[ıiuü]|l[ıiuü]k|sel|sal|c[ae]|ç[ae])/
 // Қысқа етістік түбірінен кейінгі қосымшалар
 const VERB_SUF = /^(y?[ıiuü]yor|[ae]r|[ıiuü]r|[dt][ıiuü]|m[ae]|y?[ae]c[ae][kğ]|y?[ae]bil|y?[ıiuü]p|y?[ae]l[ıi]m|y?[ae]y[ıi]m|s[ıi]n|[ıiuü]n|y?[ıiuü]n|y?[ae]n|m[ae]k|m[ae]l[ıi])/
 
 type Matcher = { tr: string; parts: string[][]; narrow: string[]; verb: boolean; len: number }
 
 // Дауысты дыбысы түсетін сөздер: şehir → şehri, ağız → ağzı, oğul → oğlu
-const DROP = new Set(['şehir', 'ağız', 'oğul', 'isim', 'akıl', 'resim', 'vakit', 'kayıp', 'fikir'])
+const DROP = new Set(['şehir', 'ağız', 'oğul', 'isim', 'akıl', 'resim', 'vakit', 'kayıp', 'fikir', 'burun', 'omuz', 'karın', 'alın', 'beyin', 'nehir', 'gönül', 'boyun', 'şekil', 'kayın'])
 
 function stems(word: string): { stems: string[]; narrow: string[]; verb: boolean } {
   let w = lower(word)
@@ -156,14 +202,14 @@ function partMatches(token: string, st: string[], verb: boolean, allowSuffix: bo
     const rest = token.slice(s.length)
     if (verb) {
       if (s.length >= 3 || VERB_SUF.test(rest)) return true
-    } else if (s.length >= 5 || NOUN_SUF.test(rest)) return true
+    } else if (NOUN_SUF.test(rest) || (s.length >= 4 && DERIV.test(rest))) return true
   }
   return false
 }
 
 const MATCHERS: Matcher[] = WORD_LIST.map((w) => {
   const pieces = w.tr.split(' ')
-  const parts = pieces.map((p, i) => (i === pieces.length - 1 ? stems(p).stems : [lower(p)]))
+  const parts = pieces.map((p, i) => (i === pieces.length - 1 ? stems(p).stems : stems(p).stems.filter((x) => !/(mak|mek)$/.test(x))))
   const info = stems(pieces[pieces.length - 1])
   const verb = info.verb
   // Ұзын түбір бірінші тексеріледі (soru ≠ sor-mak), тең болса — зат есім бірінші
@@ -180,7 +226,8 @@ export function analyze(sentence: string): { uses: string[]; unknown: number } {
     for (const m of MATCHERS) {
       if (i + m.parts.length > toks.length) continue
       const lastPart = (j: number) => j === m.parts.length - 1
-      const ok = m.parts.every((st, j) => partMatches(toks[i + j], st, m.verb && lastPart(j), lastPart(j), lastPart(j) ? m.narrow : []))
+      // Тіркестің әр бөлігі де түрленуі мүмкін: göz-üm kal-dı, el-i açık-tı
+      const ok = m.parts.every((st, j) => partMatches(toks[i + j], st, m.verb && lastPart(j), true, lastPart(j) ? m.narrow : []))
       if (ok) {
         hit = m
         break
@@ -203,7 +250,8 @@ const rawSentences: [string, string][] = [
   ...VOCAB.flatMap((g) => g.words.map(([, , , ex, exKk]) => [ex, exKk] as [string, string])),
   ...EXTRA_EXAMPLES,
   ...BRIDGES,
-  ...DIALOGS.flatMap((d) => d.lines.filter((l) => !/\{[AB]\}/.test(l.tr)).map((l) => [l.tr, l.kk] as [string, string])),
+  ...EXTENDED.filter((p) => p.ex).map((p) => p.ex as [string, string]),
+  ...[...DIALOGS, ...EPISODES].flatMap((d) => d.lines.filter((l) => !/\{[AB]\}/.test(l.tr)).map((l) => [l.tr, l.kk] as [string, string])),
   ...STORIES.flatMap((s) => s.lines),
 ]
 
@@ -222,4 +270,5 @@ export const BANDS = [
   { id: 'A2', label: 'A2 · Негізгі', words: WORD_LIST.filter((w) => w.level === 2) },
   { id: 'B1', label: 'B1 · Орта', words: WORD_LIST.filter((w) => w.level === 3) },
   { id: 'B2', label: 'B2 · Ортадан жоғары', words: WORD_LIST.filter((w) => w.level === 4) },
+  { id: 'C1', label: 'C1 · Жоғары', words: WORD_LIST.filter((w) => w.level === 5) },
 ]

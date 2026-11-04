@@ -5,12 +5,14 @@ export type Story = {
   id: string
   title: string
   icon: string
-  level: 1 | 2 | 3
+  level: 1 | 2 | 3 | 4 | 5
   lines: [tr: string, kk: string][]
   gloss: Record<string, string> // кіші әріппен жазылған сөз → қазақша
 }
 
-export const STORIES: Story[] = [
+import { STORIES2 } from './stories2'
+
+const BASE: Story[] = [
   {
     id: 'mia',
     title: 'Мысығымыз Миа',
@@ -122,6 +124,17 @@ export const STORIES: Story[] = [
     },
   },
 ]
+
+export const STORIES: Story[] = [...BASE, ...STORIES2]
+
+/** Барлық әңгімеге ортақ жиі сөздер (шылаулар, есімдіктер т.б.) */
+export const COMMON_GLOSS: Record<string, string> = {
+  her: 'әр', herkes: 'бәрі', herkese: 'бәріне', bütün: 'бүкіл', türkçe: 'түрікше', türk: 'түрік', da: 'да, де', de: 'да, де',
+  bana: 'маған', sana: 'саған', ise: 'ал (қарсы қою)', olarak: 'ретінде', hem: 'әрі (hem…hem — әрі…әрі)', ancak: 'алайда',
+  mia: 'Миа (мысықтың аты)', merkezinde: 'орталығында', üçüncü: 'үшінші', ikinci: 'екінші', davet: 'шақыру', ettik: 'еттік',
+  bahar: 'көктем', öğle: 'түс', öğleden: 'түстен', ziyaret: 'бару, зиярат', sahibi: 'иесі', an: 'сәт',
+  kazakistan: 'Қазақстан', sabır: 'сабыр', olduğu: 'болғаны', gerekir: 'керек', sera: 'парник', 'сыңсу': 'қыздың қоштасу жыры',
+}
 
 /** Мәтінді сөздерге бөледі, тыныс белгілерін сақтап */
 export function splitWords(line: string) {

@@ -48,11 +48,15 @@ export async function loadMe() {
     profile: (p.data as Profile) ?? null,
     progress: Object.fromEntries((prog.data ?? []).map((r) => [r.lesson_id, r.stars])),
     days: Object.fromEntries((act.data ?? []).map((r) => [r.day, r.xp])),
-    words: Object.fromEntries(((words.data ?? []) as (WordState & { word: string })[]).map(({ word, ...st }) => [word, st])),
+    // stage -1 — өшірілген сөз (тест нәтижесін жойғанда), оны мүлде есептемейміз
+    words: Object.fromEntries(
+      ((words.data ?? []) as (WordState & { word: string })[]).filter((r) => r.stage >= 0).map(({ word, ...st }) => [word, st]),
+    ),
     // Кесте әлі жасалмаса (миграция орындалмаса) — қате емес, жай бос тізім
     wordsLoaded: !words.error,
   })
   if (words.error) console.warn('word_progress:', words.error.message)
+  else await fixLegacyPlacement()
 }
 
 export async function loadFriends() {
@@ -107,6 +111,22 @@ export async function loadInvites() {
   setState({ invites: (data ?? []) as DialogSession[] })
 }
 
+/** Аяқталмаған (кідіртілген) онлайн диалогтар — кейін жалғастыру үшін */
+export async function loadActiveDialogs() {
+  const uid = getState().session?.user.id
+  if (!uid) return
+  const since = new Date(Date.now() - 30 * 86400000).toISOString()
+  const { data } = await supabase
+    .from('dialog_sessions')
+    .select()
+    .or(`host.eq.${uid},guest.eq.${uid}`)
+    .eq('status', 'active')
+    .gte('updated_at', since)
+    .order('updated_at', { ascending: false })
+    .limit(10)
+  setState({ activeDialogs: (data ?? []) as DialogSession[] })
+}
+
 // ---------- Realtime ----------
 
 let channel: RealtimeChannel | null = null
@@ -126,7 +146,11 @@ export function startRealtime() {
     .channel(`duo-${uid}-${++seq}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'friendships' }, refreshFriendsSoon)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'activity' }, refreshFriendsSoon)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'dialog_sessions', filter: `guest=eq.${uid}` }, () => void loadInvites())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'dialog_sessions', filter: `guest=eq.${uid}` }, () => {
+      void loadInvites()
+      void loadActiveDialogs()
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'dialog_sessions', filter: `host=eq.${uid}` }, () => void loadActiveDialogs())
     .subscribe((status) => {
       // Байланыс үзілсе — біраздан соң қайта қосыламыз
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setTimeout(() => getState().session && startRealtime(), 5000)
@@ -147,6 +171,7 @@ function refreshAll() {
   if (!getState().session || document.visibilityState === 'hidden') return
   void loadFriends()
   void loadInvites()
+  void loadActiveDialogs()
 }
 
 function onVisible() {
@@ -204,6 +229,32 @@ export async function saveWords(updates: Record<string, WordState>) {
   const rows = Object.entries(updates).map(([word, st]) => ({ user_id: uid, word, ...st }))
   const { error } = await supabase.from('word_progress').upsert(rows)
   if (error) toast(t.errNetwork)
+}
+
+/** Ескі деңгей тесті барлық сөзді бірден «білемін» деп жапқан еді — енді оларды тексерілмеген етеміз */
+async function fixLegacyPlacement() {
+  const { legacyPlaced, addDays } = await import('./srs')
+  const legacy = legacyPlaced(getState().words)
+  if (!legacy.length) return
+  const today = dayKey()
+  const updates: Record<string, WordState> = {}
+  legacy.forEach(([tr, st], i) => (updates[tr] = { ...st, stage: 0, correct: 0, due_on: addDays(today, i % 21) }))
+  await saveWords(updates)
+}
+
+/** Тест нәтижесін жою: тексерілмеген сөздер өшіріледі (тестті қайта тапсыруға болады) */
+export async function resetPlacement() {
+  const words = getState().words
+  const updates: Record<string, WordState> = {}
+  for (const [tr, st] of Object.entries(words)) if (st.stage === 0) updates[tr] = { ...st, stage: -1 }
+  if (!Object.keys(updates).length) return 0
+  await saveWords(updates)
+  setState((s) => {
+    const w = { ...s.words }
+    for (const tr of Object.keys(updates)) delete w[tr]
+    return { words: w }
+  })
+  return Object.keys(updates).length
 }
 
 /** Күнделікті жаттығу, әңгіме т.б. үшін XP */
@@ -318,10 +369,10 @@ async function handleSession(session: Session | null) {
   if (!session) {
     stopRealtime()
     stopPolling()
-    setState({ ready: true, profile: null, friends: [], invites: [], progress: {}, days: {}, words: {} })
+    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {} })
     return
   }
-  await Promise.all([loadMe(), loadFriends(), loadInvites()])
+  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs()])
   startRealtime()
   setState({ ready: true })
 }

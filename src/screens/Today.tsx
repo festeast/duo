@@ -6,7 +6,7 @@ import { WORD_LIST } from '../data/words'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
 import { speak } from '../lib/speech'
-import { MAX_STAGE, dueLabel, getNewPerDay, todayPlan, type Plan } from '../lib/srs'
+import { MAX_STAGE, dueLabel, getNewPerDay, isLearned, todayPlan, type Plan } from '../lib/srs'
 import { placedKey } from '../lib/placement'
 import { dayKey, studiedToday, useStore } from '../lib/store'
 
@@ -35,14 +35,14 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
 
   const learned = useMemo(
     () =>
-      WORD_LIST.filter((w) => words[w.tr]).sort(
+      WORD_LIST.filter((w) => isLearned(words[w.tr])).sort(
         (a, b) => words[a.tr].due_on.localeCompare(words[b.tr].due_on) || a.order - b.order,
       ),
     [words],
   )
   if (!me) return null
 
-  const todo = plan.review.length + plan.fresh.length
+  const todo = plan.review.length + plan.fresh.length + plan.check.length
   const goal = Math.max(getNewPerDay(), plan.doneToday + todo)
   const finished = todo === 0
   const done = studiedToday(days)
@@ -95,6 +95,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
             <h2>📅 {t.todayTitle}</h2>
             <span className="muted small">
               {finished ? t.todayAllDone : t.todayCounts(plan.fresh.length, plan.review.length)}
+              {!finished && plan.check.length > 0 && ` · ${t.checksToday(plan.check.length)}`}
             </span>
           </div>
           <Cat look={me.cat} size={64} mood={finished || done ? 'happy' : 'normal'} bounce={finished} />
@@ -148,6 +149,8 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
           </>
         )}
       </section>
+
+      {plan.unverified > 0 && <p className="muted small center" style={{ margin: 0 }}>🔍 {t.unverifiedLeft(plan.unverified)}</p>}
 
       {/* ---------- Бүгінгі кеңес ---------- */}
       <section className="card tip">

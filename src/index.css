@@ -455,3 +455,12 @@ h3 { font-size: 19px; }
 .level-badge { display: inline-block; background: var(--blue-soft); color: var(--blue-dark); font-weight: 900; font-size: 22px; padding: 8px 18px; border-radius: 99px; }
 .level-badge.small { font-size: 14px; padding: 4px 12px; }
 .dont-know { color: var(--muted); border-style: dashed; }
+.link-btn.danger { color: var(--red); }
+
+/* ---------- Сериал ---------- */
+.episodes { display: flex; flex-direction: column; gap: 8px; }
+.episode { display: flex; align-items: center; gap: 12px; background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 10px 12px; text-align: left; color: var(--text); }
+.episode .ep-num { font-size: 26px; width: 34px; text-align: center; }
+.episode.done { border-color: var(--green); }
+.episode.next { border-color: var(--purple); box-shadow: 0 4px 0 #6b45a8; }
+.episode:disabled { opacity: 0.5; }

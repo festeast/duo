@@ -3,29 +3,36 @@ import { Cat } from '../components/Cat'
 import { BANDS, type Word } from '../data/words'
 import { t } from '../i18n/kk'
 import { saveWords } from '../lib/api'
-import { shuffle } from '../lib/exercises'
+import { checkTyped, shuffle } from '../lib/exercises'
+import { TypeAnswer } from '../components/Exercises'
 import { sfx } from '../lib/sound'
-import { speak } from '../lib/speech'
+import { speak, stopSpeaking } from '../lib/speech'
 import { placementStates, type WordState } from '../lib/srs'
 import { markPlaced } from '../lib/placement'
 import { useStore } from '../lib/store'
 
-// Деңгей тесті: әр деңгейден 4 сұрақ, 3-еуіне дұрыс жауап берсең — келесі деңгейге өтесің.
+// Деңгей тесті: әр деңгейден 6 сұрақ, 5-еуіне дұрыс жауап берсең — келесі деңгейге өтесің.
 // A1+ деңгейінен басталады: өтсең жоғары көтерілеміз, өтпесең A1-ді тексереміз.
-const PER_BAND = 4
-const PASS = 3
+// Қазақшаға ұқсас сөздер (су, көз…) тестке кірмейді — оларды болжау тым оңай.
+const PER_BAND = 6
+const PASS = 5
 const START = 1
 
-type Q = { word: Word; dir: 'tr-kk' | 'kk-tr'; options: string[]; answer: string }
+type Q = { word: Word; dir: 'tr-kk' | 'kk-tr' | 'type'; options: string[]; answer: string }
 
 function makeQuestions(band: number): Q[] {
-  const words = shuffle(BANDS[band].words.filter((w) => !w.tr.includes(' '))).slice(0, PER_BAND)
+  const pool = BANDS[band].words.filter((w) => w.cognate?.kind !== 'same' && w.tr.length >= 3)
+  const words = shuffle(pool).slice(0, PER_BAND)
   return words.map((w, i) => {
-    const dir = band >= 2 && i % 2 === 1 ? 'kk-tr' : 'tr-kk'
-    const pool = BANDS[band].words.filter((x) => x.tr !== w.tr)
+    // Көбіне қазақшадан түрікшеге (бұл қиынырақ); B1-ден бастап екі сұрақты өзің жазасың
+    const dir: Q['dir'] = band >= 3 && i >= PER_BAND - 2 ? 'type' : i % 3 === 0 ? 'tr-kk' : 'kk-tr'
     const answer = dir === 'tr-kk' ? w.kk : w.tr
-    const others = shuffle(pool)
-      .map((x) => (dir === 'tr-kk' ? x.kk : x.tr))
+    if (dir === 'type') return { word: w, dir, answer, options: [] }
+    const field = (x: Word) => (dir === 'tr-kk' ? x.kk : x.tr)
+    // Алдағыш нұсқалар: бір әріптен басталатын немесе ұзындығы ұқсас сөздер
+    const similar = pool.filter((x) => x.tr !== w.tr && (x.tr[0] === w.tr[0] || Math.abs(x.tr.length - w.tr.length) <= 1))
+    const others = shuffle(similar.length >= 3 ? similar : pool.filter((x) => x.tr !== w.tr))
+      .map(field)
       .filter((x, j, arr) => x !== answer && arr.indexOf(x) === j)
       .slice(0, 3)
     return { word: w, dir, answer, options: shuffle([answer, ...others]) }
@@ -44,6 +51,7 @@ export function Placement({ onDone }: { onDone: () => void }) {
   const [flash, setFlash] = useState<string | null>(null)
   const [done, setDone] = useState<number | null>(null) // өтілген деңгейлер саны
   const [saving, setSaving] = useState(false)
+  const [typed, setTyped] = useState('')
   const asked = useMemo(() => Object.keys(results).length * PER_BAND + i, [results, i])
 
   const q = qs[i]
@@ -70,12 +78,14 @@ export function Placement({ onDone }: { onDone: () => void }) {
 
   const answer = (opt: string | null) => {
     if (flash) return
-    const ok = opt === q.answer
+    const ok = q.dir === 'type' ? opt !== null && checkTyped(opt, q.answer) !== 'wrong' : opt === q.answer
+    setTyped('')
     ;(ok ? right : wrong).add(q.word.tr)
     if (ok) sfx.correct()
     else sfx.wrong()
     setFlash(opt ?? '∅')
     setTimeout(() => {
+      stopSpeaking()
       setFlash(null)
       const c = correct + (ok ? 1 : 0)
       const remaining = PER_BAND - (i + 1)
@@ -84,7 +94,7 @@ export function Placement({ onDone }: { onDone: () => void }) {
       if (c + remaining < PASS) return finishBand(false)
       setCorrect(c)
       setI(i + 1)
-    }, 550)
+    }, q.dir === 'type' && !ok ? 1700 : 550)
   }
 
   if (done !== null) {
@@ -122,7 +132,7 @@ export function Placement({ onDone }: { onDone: () => void }) {
           ✕
         </button>
         <div className="bar xp">
-          <i style={{ width: `${Math.min(100, (asked / 16) * 100)}%` }} />
+          <i style={{ width: `${Math.min(100, (asked / 24) * 100)}%` }} />
         </div>
         <span className="level-tag l2">{BANDS[band].id}</span>
       </div>
@@ -142,6 +152,16 @@ export function Placement({ onDone }: { onDone: () => void }) {
           )}
         </div>
         <div className="spacer" />
+        {q.dir === 'type' && (
+          <>
+            <span className="muted small">✍️ {t.typeTitle}</span>
+            <TypeAnswer value={typed} setValue={setTyped} locked={!!flash} onEnter={() => answer(typed)} />
+            {flash && <span className="muted">{t.correctAnswer} <b>{q.answer}</b></span>}
+            <button className="btn wide" disabled={!typed.trim() || !!flash} onClick={() => answer(typed)}>
+              {t.check}
+            </button>
+          </>
+        )}
         <div className="col" style={{ gap: 10 }}>
           {q.options.map((o) => (
             <button

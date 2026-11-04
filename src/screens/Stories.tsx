@@ -1,10 +1,10 @@
-import { useState } from 'react'
-import { STORIES, glossKey, splitWords, type Story } from '../data/stories'
-import { wordByTr } from '../data/words'
+import { useEffect, useState } from 'react'
+import { COMMON_GLOSS, STORIES, glossKey, splitWords, type Story } from '../data/stories'
+import { analyze, wordByTr } from '../data/words'
 import { t } from '../i18n/kk'
 import { addXp } from '../lib/api'
 import { sfx } from '../lib/sound'
-import { speak } from '../lib/speech'
+import { speak, stopSpeaking } from '../lib/speech'
 import { dayKey } from '../lib/store'
 
 const READ_KEY = 'duo-stories-read'
@@ -17,7 +17,18 @@ function readLog(): Record<string, string> {
   }
 }
 
-const LEVELS = ['', 'Оңай', 'Орта', 'Қиын']
+const LEVELS = ['', 'A1 · Оңай', 'A2', 'B1', 'B2', 'C1']
+
+/** Сөз аудармасы: алдымен әңгіменің сөздігі, болмаса — жалпы сөздік (түбірі бойынша) */
+function glossOf(story: Story, key: string) {
+  if (story.gloss[key]) return story.gloss[key]
+  if (COMMON_GLOSS[key]) return COMMON_GLOSS[key]
+  const direct = wordByTr(key)
+  if (direct) return direct.kk
+  const hit = analyze(key).uses[0]
+  const w = hit ? wordByTr(hit) : undefined
+  return w ? `${w.kk} (${w.tr})` : '—'
+}
 
 export function Stories({ onOpen }: { onOpen: (id: string) => void }) {
   const log = readLog()
@@ -40,9 +51,8 @@ export function Stories({ onOpen }: { onOpen: (id: string) => void }) {
             <span className="story-icon">{s.icon}</span>
             <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start' }}>
               <b>{s.title}</b>
-              <span className={`level-tag l${s.level}`}>
-                {'●'.repeat(s.level)}
-                {'○'.repeat(3 - s.level)} {LEVELS[s.level]} · {s.lines.length} {t.sentences}
+              <span className={`level-tag l${Math.min(3, s.level)}`}>
+                {LEVELS[s.level]} · {s.lines.length} {t.sentences}
               </span>
             </span>
             {log[s.id] && <span className="ok-text">✓</span>}
@@ -58,6 +68,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
   const [showKk, setShowKk] = useState(false)
   const [popup, setPopup] = useState<{ word: string; gloss: string; line: number } | null>(null)
   const [finished, setFinished] = useState(() => readLog()[id] === dayKey())
+  useEffect(() => () => stopSpeaking(), [])
 
   const finish = () => {
     sfx.win()
@@ -113,7 +124,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
                       className={`tw${popup?.line === li && popup.word === w ? ' on' : ''}`}
                       onClick={() => {
                         speak(w.replace(/[“”"«»]/g, ''))
-                        setPopup({ word: w, gloss: story.gloss[key] ?? wordByTr(key)?.kk ?? '—', line: li })
+                        setPopup({ word: w, gloss: glossOf(story, key), line: li })
                       }}
                     >
                       {w}

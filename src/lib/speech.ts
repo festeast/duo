@@ -148,6 +148,11 @@ function fileFor(text: string) {
   return null
 }
 
+/** Дыбысты тоқтату (келесі тапсырмаға өткенде) */
+export function stopSpeaking() {
+  stopAll()
+}
+
 function stopAll() {
   if (player) player.pause()
   if (canSpeak()) speechSynthesis.cancel()

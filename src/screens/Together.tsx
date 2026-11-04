@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Cat } from '../components/Cat'
-import { DEFAULT_NAMES, DIALOGS, LEVEL_NAMES, isNamedRole, personalize, turnsOf, type Dialog, type Level } from '../data/dialogs'
+import { DEFAULT_NAMES, DIALOGS, EPISODES, LEVEL_NAMES, dialogById, isNamedRole, personalize, turnsOf, type Dialog, type Level } from '../data/dialogs'
+import { getSolo } from '../lib/dialogProgress'
 import { t } from '../i18n/kk'
 import { acceptFriend, addFriend, inviteDialog, removeFriend } from '../lib/api'
 import { sfx } from '../lib/sound'
@@ -12,6 +13,8 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
   const me = useStore((s) => s.profile)
   const myDays = useStore((s) => s.days)
   const friends = useStore((s) => s.friends)
+  const activeDialogs = useStore((s) => s.activeDialogs)
+  const progress = useStore((s) => s.progress)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState<Dialog | null>(null)
@@ -121,6 +124,79 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
             <span className="muted small">{t.pendingOut}</span>
           </div>
         ))}
+      </section>
+
+      {/* Кідіртілген диалогтар */}
+      {(() => {
+        const online = activeDialogs.filter((d) => dialogById(d.dialog_id))
+        const solo = [...DIALOGS, ...EPISODES].map((d) => ({ d, p: getSolo(d.id) })).filter((x) => x.p)
+        if (!online.length && !solo.length) return null
+        return (
+          <section className="col">
+            <h3>⏸ {t.continueDialogs}</h3>
+            {online.map((sess) => {
+              const d = dialogById(sess.dialog_id)!
+              const pid = sess.host === me.id ? sess.guest : sess.host
+              const partner = friends.find((f) => f.profile.id === pid)?.profile
+              return (
+                <button key={sess.id} className="card row choice" onClick={() => onDialog({ kind: 'online', sessionId: sess.id })}>
+                  <span style={{ fontSize: 30 }}>{d.icon}</span>
+                  <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start' }}>
+                    <b>{d.title}</b>
+                    <span className="muted small">
+                      {partner?.name ?? '…'} · {sess.step}/{sess.turns.length}
+                    </span>
+                  </span>
+                  <span className="btn small">{t.resume}</span>
+                </button>
+              )
+            })}
+            {solo.map(({ d, p }) => (
+              <button key={d.id} className="card row choice" onClick={() => onDialog({ kind: 'solo', dialogId: d.id, role: p!.role })}>
+                <span style={{ fontSize: 30 }}>{d.icon}</span>
+                <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start' }}>
+                  <b>{d.title}</b>
+                  <span className="muted small">
+                    🐱 {t.withCat} · {p!.step}/{d.lines.length}
+                  </span>
+                </span>
+                <span className="btn small ghost">{t.resume}</span>
+              </button>
+            ))}
+          </section>
+        )
+      })()}
+
+      {/* Сериал */}
+      <section className="col">
+        <h3>{t.seriesTitle(EPISODES[0].series!.name)}</h3>
+        <p className="muted small" style={{ margin: 0 }}>
+          {t.seriesHint}
+        </p>
+        <div className="episodes">
+          {EPISODES.map((d, i) => {
+            const done = !!progress[`dlg-${d.id}`]
+            const open = i === 0 || !!progress[`dlg-${EPISODES[i - 1].id}`]
+            return (
+              <button
+                key={d.id}
+                className={`episode${done ? ' done' : ''}${open && !done ? ' next' : ''}`}
+                disabled={!open}
+                onClick={() => {
+                  sfx.click()
+                  setPicking(d)
+                }}
+              >
+                <span className="ep-num">{done ? '✓' : open ? d.icon : '🔒'}</span>
+                <span className="col" style={{ gap: 0, alignItems: 'flex-start', flex: 1 }}>
+                  <span className="muted tiny">{t.episode(d.series!.episode)}</span>
+                  <b>{d.title}</b>
+                </span>
+                <span className="muted tiny">{d.lines.length} реплика</span>
+              </button>
+            )
+          })}
+        </div>
       </section>
 
       {/* Диалогтар */}
