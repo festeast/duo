@@ -4,12 +4,16 @@
 // Бар файлдар қайта жасалмайды — жаңа сабақ қосқанда қайта іске қоса бер.
 
 import { createServer } from 'vite'
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs'
+import { execFileSync } from 'child_process'
 
 const KEY = process.env.GOOGLE_TTS_KEY
 if (!KEY) throw new Error('GOOGLE_TTS_KEY керек')
 
 export const VOICES = { female: 'tr-TR-Chirp3-HD-Aoede', male: 'tr-TR-Chirp3-HD-Charon' }
+// Chirp3 сәтсіз болса — сенімді WaveNet дауысы
+const FALLBACK = { female: 'tr-TR-Wavenet-C', male: 'tr-TR-Wavenet-E' }
+const VERIFY = process.argv.includes('--verify')
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' })
 const load = (p) => server.ssrLoadModule(p)
@@ -48,6 +52,27 @@ async function synth(text, voice) {
   }
 }
 
+/** Аудио ұзақтығы (секунд) — ffprobe арқылы */
+function duration(file) {
+  try {
+    return Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', file]).toString().trim())
+  } catch {
+    return 0
+  }
+}
+
+/** «Ақ шу» белгісі: қысқа мәтінге тым қысқа (≤0.4 с) дыбыс */
+const suspicious = (file) => duration(file) < 0.45
+
+/** Файлды жасап, тексереді; шу болса — қайталайды, ақырында WaveNet дауысына ауысады */
+async function makeGood(file, text, id) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    writeFileSync(file, await synth(text, VOICES[id]))
+    if (!suspicious(file)) return
+  }
+  writeFileSync(file, await synth(text, FALLBACK[id]))
+}
+
 let made = 0
 let chars = 0
 // Манифест: әйел дауысының файлы бар фразалар (жұмыс барысында жаңарып отырады)
@@ -58,12 +83,18 @@ const writeManifest = () => {
 for (const [id, voice] of Object.entries(VOICES)) {
   const dir = `public/audio/${id}`
   mkdirSync(dir, { recursive: true })
+  // --verify: бар файлдарды тексеріп, шу болғандарын қайта жасаймыз
+  if (VERIFY) {
+    const bad = unique.filter(([k]) => existsSync(`${dir}/${k}.mp3`) && suspicious(`${dir}/${k}.mp3`))
+    console.log(`${id}: тексеруде ${bad.length} күдікті файл`)
+    for (const [k] of bad) unlinkSync(`${dir}/${k}.mp3`)
+  }
   const todo = unique.filter(([k]) => !existsSync(`${dir}/${k}.mp3`))
   // 4 сұрау қатар
   for (let i = 0; i < todo.length; i += 4) {
     await Promise.all(
       todo.slice(i, i + 4).map(async ([k, text]) => {
-        writeFileSync(`${dir}/${k}.mp3`, await synth(text, voice))
+        await makeGood(`${dir}/${k}.mp3`, text, id)
         made++
         chars += text.length
       }),
