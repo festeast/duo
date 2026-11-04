@@ -13,6 +13,7 @@ import { Result, type LessonResult } from './screens/Result'
 import { Session } from './screens/Session'
 import { Stories, StoryRead } from './screens/Stories'
 import { Today } from './screens/Today'
+import { Placement } from './screens/Placement'
 import type { Plan } from './lib/srs'
 import { Setup } from './screens/Setup'
 import { Shop } from './screens/Shop'
@@ -24,6 +25,7 @@ type Screen =
   | { name: 'setup'; first?: boolean }
   | { name: 'session'; plan: Plan }
   | { name: 'story'; id: string }
+  | { name: 'placement' }
   | { name: 'dialog'; start: DialogStart }
   | { name: 'result'; r: LessonResult; back: Tab }
 
@@ -82,6 +84,9 @@ export default function App() {
       case 'session':
         body = <Session plan={screen.plan} onExit={() => main()} onFinish={(r) => go({ name: 'result', r, back: 'learn' })} />
         break
+      case 'placement':
+        body = <Placement onDone={() => main('learn')} />
+        break
       case 'story':
         body = <StoryRead id={screen.id} onBack={() => main('read')} />
         break
@@ -102,11 +107,11 @@ export default function App() {
         body = (
           <>
             <Header onCat={() => main('me')} />
-            {screen.tab === 'learn' && <Today onStart={(plan) => go({ name: 'session', plan })} />}
+            {screen.tab === 'learn' && <Today onStart={(plan) => go({ name: 'session', plan })} onPlacement={() => go({ name: 'placement' })} />}
             {screen.tab === 'read' && <Stories onOpen={(id) => go({ name: 'story', id })} />}
             {screen.tab === 'together' && <Together onDialog={(start) => go({ name: 'dialog', start })} />}
             {screen.tab === 'shop' && <Shop />}
-            {screen.tab === 'me' && <Profile onEdit={() => go({ name: 'setup' })} />}
+            {screen.tab === 'me' && <Profile onEdit={() => go({ name: 'setup' })} onPlacement={() => go({ name: 'placement' })} />}
             <nav className="tabbar">
               {TABS.map(([id, ico, label]) => (
                 <button

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Cat } from '../components/Cat'
 import { Feedback, Match, MicButton, Options, SpeakButtons, TileBuilder, TypeAnswer, WordCard, type Status } from '../components/Exercises'
-import { SENTENCES, WORD_LIST, type Word } from '../data/words'
+import { wordByTr } from '../data/words'
+import { buildSession, type Ex } from '../lib/session'
 import { randomPraise, t } from '../i18n/kk'
 import { addXp, saveWords } from '../lib/api'
 import { checkTyped, normTr, shuffle, tokenize } from '../lib/exercises'
@@ -12,76 +13,10 @@ import { grade, type Plan, type WordState } from '../lib/srs'
 import { getState, levelOf, useStore } from '../lib/store'
 import type { LessonResult } from './Result'
 
-type Ex =
-  | { kind: 'intro'; word: Word }
-  | { kind: 'choose'; dir: 'tr-kk' | 'kk-tr'; word: Word; prompt: string; options: string[]; answer: string; speak?: string }
-  | { kind: 'listen'; word: Word; options: string[]; answer: string }
-  | { kind: 'type'; word: Word; prompt: string; answer: string }
-  | { kind: 'match'; words: Word[] }
-  | { kind: 'build'; prompt: string; tiles: string[]; answer: string; tests: string[] }
-  | { kind: 'shadow'; tr: string; kk: string }
-
 type Q = Ex & { key: number }
 
-const pick = <T,>(arr: T[], n: number) => shuffle(arr).slice(0, n)
-
-function distract(answer: string, pool: string[], n = 3) {
-  return pick([...new Set(pool)].filter((x) => normTr(x) !== normTr(answer)), n)
-}
-
-const choose = (w: Word, dir: 'tr-kk' | 'kk-tr'): Ex =>
-  dir === 'tr-kk'
-    ? { kind: 'choose', dir, word: w, prompt: w.tr, speak: w.tr, answer: w.kk, options: shuffle([w.kk, ...distract(w.kk, WORD_LIST.map((x) => x.kk))]) }
-    : { kind: 'choose', dir, word: w, prompt: w.kk, answer: w.tr, options: shuffle([w.tr, ...distract(w.tr, WORD_LIST.map((x) => x.tr))]) }
-
-const listen = (w: Word): Ex => ({ kind: 'listen', word: w, answer: w.tr, options: shuffle([w.tr, ...distract(w.tr, WORD_LIST.map((x) => x.tr))]) })
-
-/** Сөйлемде осы сөз (немесе оның түрі) бар ма */
-const hasWord = (sentence: string, w: Word) =>
-  tokenize(sentence).some((x) => {
-    const a = normTr(x)
-    const b = normTr(w.tr)
-    return a === b || (b.length >= 4 && a.startsWith(b.slice(0, -1)))
-  })
-
-/** Бүгінгі жаттығуды құрастыру: жаңа сөздер таныстырылады, бәрі араласып қайталанады */
-function buildSession(plan: Plan, states: Record<string, WordState>): Ex[] {
-  const all = [...plan.review, ...plan.fresh]
-  const intro: Ex[] = plan.fresh.flatMap((w) => [{ kind: 'intro', word: w } as Ex, choose(w, 'tr-kk')])
-  const mixed: Ex[] = []
-
-  for (const w of plan.fresh) mixed.push(Math.random() < 0.5 ? choose(w, 'kk-tr') : listen(w))
-  for (const w of plan.review) {
-    const st = states[w.tr]?.stage ?? 1
-    // Сөз бекіген сайын тапсырма қиындайды: таңдау → тыңдау → өзің жаз
-    if (st >= 3) mixed.push({ kind: 'type', word: w, prompt: w.kk, answer: w.tr })
-    else mixed.push(Math.random() < 0.5 ? choose(w, 'kk-tr') : listen(w))
-  }
-  // Жаңа сөздің біреуін жазып көру
-  if (plan.fresh.length) {
-    const w = pick(plan.fresh, 1)[0]
-    mixed.push({ kind: 'type', word: w, prompt: w.kk, answer: w.tr })
-  }
-  if (all.length >= 4) mixed.push({ kind: 'match', words: pick(all, 5) })
-
-  // Сөздер сөйлем ішінде (контекст)
-  const sents = shuffle(SENTENCES.filter(([tr]) => all.some((w) => hasWord(tr, w)))).slice(0, 2)
-  const allTokens = SENTENCES.flatMap(([tr]) => tokenize(tr))
-  for (const [tr, kk] of sents) {
-    const tokens = tokenize(tr)
-    const extra = pick([...new Set(allTokens)].filter((x) => !tokens.some((y) => normTr(y) === normTr(x))), 3)
-    mixed.push({ kind: 'build', prompt: kk, answer: tr, tiles: shuffle([...tokens, ...extra]), tests: all.filter((w) => hasWord(tr, w)).map((w) => w.tr) })
-  }
-
-  // Тыңда да қайтала (shadowing)
-  const sh = sents[0] ?? pick(SENTENCES, 1)[0]
-  if (sh) mixed.push({ kind: 'shadow', tr: sh[0], kk: sh[1] })
-
-  return [...intro, ...shuffle(mixed)]
-}
-
 function reshuffle(ex: Q, key: number): Q {
-  if (ex.kind === 'choose' || ex.kind === 'listen') return { ...ex, key, options: shuffle(ex.options) }
+  if (ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence') return { ...ex, key, options: shuffle(ex.options) }
   if (ex.kind === 'build') return { ...ex, key, tiles: shuffle(ex.tiles) }
   return { ...ex, key }
 }
@@ -93,6 +28,7 @@ const testsOf = (ex: Ex): string[] => {
     case 'type':
       return [ex.word.tr]
     case 'build':
+    case 'sentence':
       return ex.tests
     default:
       return []
@@ -144,6 +80,10 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
 
   const check = () => {
     if (ex.kind === 'choose' || ex.kind === 'listen') return sel !== null && normTr(sel) === normTr(ex.answer) ? succeed() : fail()
+    if (ex.kind === 'sentence') {
+      if (sel === ex.answer) speak(ex.prompt)
+      return sel === ex.answer ? succeed() : fail()
+    }
     if (ex.kind === 'build') {
       const ok = picked.map((i) => normTr(ex.tiles[i])).join(' ') === tokenize(ex.answer).map(normTr).join(' ')
       if (ok) speak(ex.answer)
@@ -191,7 +131,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
 
   const canCheck =
     (ex.kind === 'build' && picked.length > 0) ||
-    ((ex.kind === 'choose' || ex.kind === 'listen') && sel !== null) ||
+    ((ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence') && sel !== null) ||
     (ex.kind === 'type' && typed.trim().length > 0)
   const answerText = 'answer' in ex ? ex.answer : ''
 
@@ -253,8 +193,23 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
               <Cat look={me.cat} size={84} />
               <div className="bubble">{ex.prompt}</div>
             </div>
+            <FocusChips fresh={ex.fresh} review={ex.review} />
             <div className="spacer" />
             <TileBuilder tiles={ex.tiles} picked={picked} setPicked={setPicked} locked={status !== 'idle'} />
+          </>
+        )}
+        {ex.kind === 'sentence' && (
+          <>
+            <h3 className="ex-title">{t.sentenceMeaning}</h3>
+            <div className="card col" style={{ gap: 8 }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <span className="prompt small-prompt">{ex.prompt}</span>
+                <SpeakButtons text={ex.prompt} />
+              </div>
+              <FocusChips fresh={ex.fresh} review={ex.review} />
+            </div>
+            <div className="spacer" />
+            <Options options={ex.options} sel={sel} setSel={setSel} status={status} answer={ex.answer} />
           </>
         )}
         {ex.kind === 'match' && (
@@ -312,6 +267,25 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       )}
 
       {status !== 'idle' && <Feedback ok={status === 'ok'} praise={praise} answer={answerText} note={note} look={me.cat} onNext={next} />}
+    </div>
+  )
+}
+
+/** Сөйлемдегі бүгінгі сөздер: ✨ жаңа, 🔁 қайталау */
+function FocusChips({ fresh, review }: { fresh: string[]; review: string[] }) {
+  if (!fresh.length && !review.length) return null
+  return (
+    <div className="chips">
+      {fresh.map((tr) => (
+        <span key={tr} className="chip-word fresh">
+          ✨ {tr} — {wordByTr(tr)?.kk}
+        </span>
+      ))}
+      {review.map((tr) => (
+        <span key={tr} className="chip-word review">
+          🔁 {tr} — {wordByTr(tr)?.kk}
+        </span>
+      ))}
     </div>
   )
 }

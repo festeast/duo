@@ -6,7 +6,8 @@ import { WORD_LIST } from '../data/words'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
 import { speak } from '../lib/speech'
-import { DAILY_TARGET, MAX_STAGE, dueLabel, todayPlan, type Plan } from '../lib/srs'
+import { MAX_STAGE, dueLabel, getNewPerDay, todayPlan, type Plan } from '../lib/srs'
+import { placedKey } from '../lib/placement'
 import { dayKey, studiedToday, useStore } from '../lib/store'
 
 const EXTRA_KEY = 'duo-extra-new'
@@ -20,11 +21,13 @@ function readExtra() {
   }
 }
 
-export function Today({ onStart }: { onStart: (plan: Plan) => void }) {
+export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void; onPlacement: () => void }) {
   const me = useStore((s) => s.profile)
   const words = useStore((s) => s.words)
   const wordsLoaded = useStore((s) => s.wordsLoaded)
   const days = useStore((s) => s.days)
+  const uid = useStore((s) => s.session?.user.id)
+  const [skipTest, setSkipTest] = useState(false)
   const [extra, setExtra] = useState(readExtra)
   const [showAll, setShowAll] = useState(false)
   const plan = useMemo(() => todayPlan(words, extra), [words, extra])
@@ -40,7 +43,7 @@ export function Today({ onStart }: { onStart: (plan: Plan) => void }) {
   if (!me) return null
 
   const todo = plan.review.length + plan.fresh.length
-  const goal = Math.max(DAILY_TARGET, plan.doneToday + todo)
+  const goal = Math.max(getNewPerDay(), plan.doneToday + todo)
   const finished = todo === 0
   const done = studiedToday(days)
   const tomorrow = learned.filter((w) => words[w.tr].due_on === dayKeyPlus(1)).length
@@ -59,6 +62,31 @@ export function Today({ onStart }: { onStart: (plan: Plan) => void }) {
   return (
     <div className="screen" style={{ paddingTop: 12 }}>
       {!wordsLoaded && <div className="card warn">{t.needMigration}</div>}
+
+      {wordsLoaded && learned.length === 0 && !skipTest && !hasPlaced(uid) && (
+        <section className="card place-card pop">
+          <h2>🎯 {t.placeAskTitle}</h2>
+          <p className="muted" style={{ margin: 0 }}>
+            {t.placeAskText}
+          </p>
+          <button className="btn wide" onClick={onPlacement}>
+            {t.placeAskYes}
+          </button>
+          <button
+            className="btn ghost wide"
+            onClick={() => {
+              try {
+                if (uid) localStorage.setItem(placedKey(uid), dayKey())
+              } catch {
+                /* бос */
+              }
+              setSkipTest(true)
+            }}
+          >
+            {t.placeAskNo}
+          </button>
+        </section>
+      )}
 
       {/* ---------- Бүгінге не бар? ---------- */}
       <section className="today card">
@@ -177,6 +205,14 @@ export function Today({ onStart }: { onStart: (plan: Plan) => void }) {
       </section>
     </div>
   )
+}
+
+function hasPlaced(uid?: string) {
+  try {
+    return !!uid && !!localStorage.getItem(placedKey(uid))
+  } catch {
+    return false
+  }
 }
 
 function dayKeyPlus(n: number) {

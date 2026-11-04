@@ -13,8 +13,7 @@ export const VOICES = { female: 'tr-TR-Chirp3-HD-Aoede', male: 'tr-TR-Chirp3-HD-
 
 const server = await createServer({ server: { middlewareMode: true }, appType: 'custom', logLevel: 'error' })
 const load = (p) => server.ssrLoadModule(p)
-const { WORD_LIST, SENTENCES } = await load('/src/data/words.ts')
-const { DIALOGS } = await load('/src/data/dialogs.ts')
+const { WORD_LIST, SENTENCE_BANK } = await load('/src/data/words.ts')
 const { STORIES } = await load('/src/data/stories.ts')
 const { TIPS } = await load('/src/data/grammar.ts')
 const { audioKey } = await load('/src/lib/audioKey.ts')
@@ -22,8 +21,7 @@ await server.close()
 
 const phrases = [
   ...WORD_LIST.map((w) => w.tr),
-  ...SENTENCES.map((s) => s[0]),
-  ...DIALOGS.flatMap((d) => d.lines.filter((l) => !/\{[AB]\}/.test(l.tr)).map((l) => l.tr)),
+  ...SENTENCE_BANK.map((s) => s.tr), // курс, мысалдар, байланыстырушы сөйлемдер, диалогтар, әңгімелер
   ...STORIES.flatMap((s) => s.lines.map((l) => l[0])),
   ...TIPS.flatMap((t) => t.examples.map((e) => e[0])),
   'Merhaba! Birlikte Türkçe öğreniyoruz.',

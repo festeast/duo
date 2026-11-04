@@ -1,17 +1,23 @@
-// Сөздік: курстағы барлық сөздер бір тізімде + сурет (эмодзи) + қазақшаға ұқсастығы.
+// Сөздік: курстағы сөздер (A1) + кеңейтілген сөздік (A1+ → B2).
+// Әр сөзде: деңгей, сурет (эмодзи), қазақшаға ұқсастығы, мысал сөйлем.
+// Сөйлемдер банкі: әр сөйлемде қай сөздер кездесетіні автоматты анықталады —
+// сонда жаңа сөзді қайталанатын сөздермен бір сөйлемде көрсете аламыз.
 import { COURSE } from './course'
+import { DIALOGS } from './dialogs'
+import { STORIES } from './stories'
+import { BRIDGES, EXTRA_EXAMPLES, VOCAB, VOCAB_COGNATES } from './vocab'
+
+export type Cognate = { kind: 'same' | 'false'; kk: string; note?: string }
 
 export type Word = {
   tr: string // түрікше (бұл сөздің id-і де)
-  kk: string // қазақша
-  topic: string // тақырып (бөлім аты)
+  kk: string
+  topic: string
+  level: 1 | 2 | 3 | 4 // 1 — A1, 2 — A2, 3 — B1, 4 — B2
   order: number // үйрену реті
   emoji?: string
   cognate?: Cognate
 }
-
-/** same — қазақшаға ұқсас сөз; false — «жалған дос»: ұқсас, бірақ мағынасы басқа */
-export type Cognate = { kind: 'same' | 'false'; kk: string; note?: string }
 
 // Екі код жүйесі (dual coding): сөз + сурет бірге жақсырақ есте қалады
 const EMOJI: Record<string, string> = {
@@ -80,20 +86,140 @@ const COGNATES: Record<string, Cognate> = {
   sol: S('сол'), yakın: S('жақын'),
   almak: S('алу'), hesap: S('есеп'),
   söz: S('сөз', 'Түрікше söz — сөз және уәде.'),
+  ...VOCAB_COGNATES,
 }
 
+// ---------- Сөздер тізімі ----------
+
 let order = 0
-export const WORDS: Word[] = COURSE.flatMap((u) =>
-  u.lessons.flatMap((l) =>
-    l.words.map(([tr, kk]) => ({ tr, kk, topic: u.title, order: order++, emoji: EMOJI[tr], cognate: COGNATES[tr] })),
+const RAW: Word[] = [
+  ...COURSE.flatMap((u) =>
+    u.lessons.flatMap((l) =>
+      l.words.map(([tr, kk]) => ({ tr, kk, topic: u.title, level: 1 as const, order: order++, emoji: EMOJI[tr], cognate: COGNATES[tr] })),
+    ),
   ),
-)
+  ...VOCAB.flatMap((g) =>
+    g.words.map(([tr, kk, emoji]) => ({ tr, kk, topic: g.topic, level: g.level, order: order++, emoji, cognate: COGNATES[tr] })),
+  ),
+]
 
-// Бір сөз екі сабақта кездессе, біріншісін қалдырамыз
+// Бір сөз екі жерде кездессе, біріншісін қалдырамыз
 const seen = new Set<string>()
-export const WORD_LIST = WORDS.filter((w) => (seen.has(w.tr) ? false : (seen.add(w.tr), true)))
+export const WORD_LIST: Word[] = RAW.filter((w) => (seen.has(w.tr) ? false : (seen.add(w.tr), true)))
+export const WORDS = WORD_LIST
 
-export const wordByTr = (tr: string) => WORD_LIST.find((w) => w.tr === tr)
+const BY_TR = new Map(WORD_LIST.map((w) => [w.tr, w]))
+export const wordByTr = (tr: string) => BY_TR.get(tr)
 
-/** Курстағы барлық сөйлемдер — сөздерді контексте көрсету үшін */
-export const SENTENCES = COURSE.flatMap((u) => u.lessons.flatMap((l) => l.sentences))
+// ---------- Сөйлемдегі сөздерді табу ----------
+
+const lower = (s: string) => s.toLocaleLowerCase('tr')
+export const tokensOf = (s: string) =>
+  lower(s)
+    .replace(/[.,!?;:“”"«»—-]/g, ' ')
+    .split(/\s+/)
+    .map((x) => x.replace(/[’'].*$/, '')) // İstanbul’a → istanbul
+    .filter(Boolean)
+
+const SOFT: Record<string, string[]> = { p: ['b'], ç: ['c'], t: ['d'], k: ['ğ', 'g'] }
+const VOWELS = 'aeıioöuü'
+// Зат есімнен кейінгі жиі қосымшалар (көптік, тәуелдік, септік, жіктік)
+const NOUN_SUF = /^(l[ae]r)?(m|n|n?[ıiuü]n|y?[ıiuü]m|y?[ıiuü]z|s?[ıiuü]|y[ıiuü]|[ıiuü]m[ıiuü]z|[ıiuü]n[ıiuü]z|m[ıiuü]z|n[ıiuü]z|n?[dt][ae]n?|y?[ae]|n[ae]|y?l[ae]|d[ıiuü]r|k[ıiuü]|s[ıiuü]n)*$/
+// Қысқа етістік түбірінен кейінгі қосымшалар
+const VERB_SUF = /^(y?[ıiuü]yor|[ae]r|[ıiuü]r|[dt][ıiuü]|m[ae]|y?[ae]c[ae][kğ]|y?[ae]bil|y?[ıiuü]p|y?[ae]l[ıi]m|y?[ae]y[ıi]m|s[ıi]n|[ıiuü]n|y?[ıiuü]n|y?[ae]n|m[ae]k|m[ae]l[ıi])/
+
+type Matcher = { tr: string; parts: string[][]; narrow: string[]; verb: boolean; len: number }
+
+// Дауысты дыбысы түсетін сөздер: şehir → şehri, ağız → ağzı, oğul → oğlu
+const DROP = new Set(['şehir', 'ağız', 'oğul', 'isim', 'akıl', 'resim', 'vakit', 'kayıp', 'fikir'])
+
+function stems(word: string): { stems: string[]; narrow: string[]; verb: boolean } {
+  let w = lower(word)
+  const verb = /(mak|mek)$/.test(w) && w.length > 4
+  if (verb) w = w.slice(0, -3)
+  const out = new Set([w])
+  const last = w[w.length - 1]
+  if (SOFT[last] && w.length >= 3) for (const x of SOFT[last]) out.add(w.slice(0, -1) + x) // kitap → kitab-ı, renk → reng-i
+  if (!verb && DROP.has(w)) out.add(w.slice(0, -2) + last)
+  // Етістікте -yor алдында дауысты тарылады: başla → başlıyor, öde → ödüyor
+  const narrow = verb && 'ae'.includes(last) ? [...'ıiuü'].map((v) => w.slice(0, -1) + v) : []
+  void VOWELS
+  return { stems: [...out], narrow, verb }
+}
+
+function partMatches(token: string, st: string[], verb: boolean, allowSuffix: boolean, narrow: string[] = []) {
+  // Тарылған түбір тек -yor алдында: başlıyor, ödüyor
+  if (allowSuffix && narrow.some((n) => token.startsWith(n + 'yor'))) return true
+  for (const s of st) {
+    if (token === s) return true
+    if (!allowSuffix || !token.startsWith(s)) continue
+    const rest = token.slice(s.length)
+    if (verb) {
+      if (s.length >= 3 || VERB_SUF.test(rest)) return true
+    } else if (s.length >= 5 || NOUN_SUF.test(rest)) return true
+  }
+  return false
+}
+
+const MATCHERS: Matcher[] = WORD_LIST.map((w) => {
+  const pieces = w.tr.split(' ')
+  const parts = pieces.map((p, i) => (i === pieces.length - 1 ? stems(p).stems : [lower(p)]))
+  const info = stems(pieces[pieces.length - 1])
+  const verb = info.verb
+  // Ұзын түбір бірінші тексеріледі (soru ≠ sor-mak), тең болса — зат есім бірінші
+  return { tr: w.tr, parts, narrow: info.narrow, verb, len: Math.max(...parts[parts.length - 1].map((x) => x.length)) * 2 + (verb ? 0 : 1) }
+}).sort((a, b) => b.parts.length - a.parts.length || b.len - a.len)
+
+/** Сөйлемде кездесетін сөздік сөздері және танылмаған сөздер саны */
+export function analyze(sentence: string): { uses: string[]; unknown: number } {
+  const toks = tokensOf(sentence)
+  const used = new Set<string>()
+  let unknown = 0
+  for (let i = 0; i < toks.length; i++) {
+    let hit: Matcher | undefined
+    for (const m of MATCHERS) {
+      if (i + m.parts.length > toks.length) continue
+      const lastPart = (j: number) => j === m.parts.length - 1
+      const ok = m.parts.every((st, j) => partMatches(toks[i + j], st, m.verb && lastPart(j), lastPart(j), lastPart(j) ? m.narrow : []))
+      if (ok) {
+        hit = m
+        break
+      }
+    }
+    if (hit) {
+      used.add(hit.tr)
+      i += hit.parts.length - 1
+    } else unknown++
+  }
+  return { uses: [...used], unknown }
+}
+
+// ---------- Сөйлемдер банкі ----------
+
+export type Sentence = { tr: string; kk: string; uses: string[]; unknown: number; tokens: number }
+
+const rawSentences: [string, string][] = [
+  ...COURSE.flatMap((u) => u.lessons.flatMap((l) => l.sentences)),
+  ...VOCAB.flatMap((g) => g.words.map(([, , , ex, exKk]) => [ex, exKk] as [string, string])),
+  ...EXTRA_EXAMPLES,
+  ...BRIDGES,
+  ...DIALOGS.flatMap((d) => d.lines.filter((l) => !/\{[AB]\}/.test(l.tr)).map((l) => [l.tr, l.kk] as [string, string])),
+  ...STORIES.flatMap((s) => s.lines),
+]
+
+const sentSeen = new Set<string>()
+export const SENTENCE_BANK: Sentence[] = rawSentences
+  .filter(([tr]) => (sentSeen.has(tr) ? false : (sentSeen.add(tr), true)))
+  .map(([tr, kk]) => ({ tr, kk, ...analyze(tr), tokens: tokensOf(tr).length }))
+
+/** Ескі API: [түрікше, қазақша] жұптары */
+export const SENTENCES: [string, string][] = SENTENCE_BANK.map((s) => [s.tr, s.kk])
+
+/** Деңгей шкаласы (деңгей тесті үшін) */
+export const BANDS = [
+  { id: 'A1', label: 'A1 · Бастауыш', words: WORD_LIST.filter((w) => w.level === 1).slice(0, 100) },
+  { id: 'A1+', label: 'A1+ · Бастауыш+', words: WORD_LIST.filter((w) => w.level === 1).slice(100) },
+  { id: 'A2', label: 'A2 · Негізгі', words: WORD_LIST.filter((w) => w.level === 2) },
+  { id: 'B1', label: 'B1 · Орта', words: WORD_LIST.filter((w) => w.level === 3) },
+  { id: 'B2', label: 'B2 · Ортадан жоғары', words: WORD_LIST.filter((w) => w.level === 4) },
+]

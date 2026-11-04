@@ -1,11 +1,15 @@
 import { Cat } from '../components/Cat'
 import { VoiceSettings } from '../components/VoiceSettings'
+import { BANDS } from '../data/words'
+import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
+import { useState } from 'react'
 import { t } from '../i18n/kk'
 import { signOut } from '../lib/api'
 import { sfx } from '../lib/sound'
 import { levelOf, setState, streakOf, useStore } from '../lib/store'
 
-export function Profile({ onEdit }: { onEdit: () => void }) {
+export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlacement: () => void }) {
+  const [perDay, setPerDay] = useState(getNewPerDay())
   const me = useStore((s) => s.profile)
   const words = useStore((s) => s.words)
   const days = useStore((s) => s.days)
@@ -47,6 +51,32 @@ export function Profile({ onEdit }: { onEdit: () => void }) {
           {t.myCode}
         </span>
         <b className="friend-code small-code">{me.friend_code}</b>
+      </div>
+
+      <div className="card col">
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <span className="muted small">{t.myLevel}</span>
+          <b className="level-badge small">{estimatedBand(words) >= 0 ? BANDS[estimatedBand(words)].label : t.placeZero}</b>
+        </div>
+        <span className="muted small">{t.newPerDay}</span>
+        <div className="seg three">
+          {NEW_OPTIONS.map((n) => (
+            <button
+              key={n}
+              className={perDay === n ? 'on' : ''}
+              onClick={() => {
+                sfx.click()
+                setNewPerDay(n)
+                setPerDay(n)
+              }}
+            >
+              {n} {t.wordsShort}
+            </button>
+          ))}
+        </div>
+        <button className="link-btn" onClick={onPlacement}>
+          🎯 {t.placeRetake}
+        </button>
       </div>
 
       <button className="btn blue wide" onClick={onEdit}>
