@@ -24,35 +24,47 @@ FACE_BOX = {
     'muscle': (0.5, 0.0, 0.2),
     'rocker': (None, 0.0, 0.22),
     'samurai': (None, 0.0, 0.2),
+    'ninja': (0.42, 0.02, 0.22),
+    'cool': (0.64, 0.02, 0.22),
+    'wizard': (None, 0.03, 0.26),
 }
 
 
 def remove_white_bg(img):
-    """Шеттен басталатын ақ фонды мөлдір етеді (ақ жүнге тимейді — ол контурмен бөлінген)."""
+    """Шеттен басталатын ақ фонды мөлдір етеді.
+    Контурдағы кішкене саңылаулар арқылы ақ жүнге (мысалы, аспаздың беті) өтіп кетпеу үшін
+    алдымен сызықтарды 2 пиксельге жуандатып, фонды солай табамыз, кейін шетін 3 пиксельге кеңейтеміз."""
+    from PIL import ImageFilter
     img = img.convert('RGBA')
     w, h = img.size
     px = img.load()
-    seen = bytearray(w * h)
+    lim = 255 - TOL
+    white = Image.new('L', (w, h))
+    white.putdata([255 if min(p[:3]) > lim else 0 for p in img.getdata()])
+    barrier = white.point(lambda v: 255 - v).filter(ImageFilter.MaxFilter(5))
+    bar = barrier.load()
+    bg = Image.new('L', (w, h))
+    bgp = bg.load()
     q = deque()
     for x in range(w):
         q.append((x, 0)); q.append((x, h - 1))
     for y in range(h):
         q.append((0, y)); q.append((w - 1, y))
-    white = lambda p: p[0] > 255 - TOL and p[1] > 255 - TOL and p[2] > 255 - TOL
     while q:
         x, y = q.popleft()
-        i = y * w + x
-        if seen[i]:
+        if bgp[x, y] or bar[x, y]:
             continue
-        seen[i] = 1
-        p = px[x, y]
-        if not white(p):
-            continue
-        px[x, y] = (255, 255, 255, 0)
+        bgp[x, y] = 255
         if x > 0: q.append((x - 1, y))
         if x < w - 1: q.append((x + 1, y))
         if y > 0: q.append((x, y - 1))
         if y < h - 1: q.append((x, y + 1))
+    grown = bg.filter(ImageFilter.MaxFilter(7)).load()
+    wp = white.load()
+    for y in range(h):
+        for x in range(w):
+            if grown[x, y] and wp[x, y]:
+                px[x, y] = (255, 255, 255, 0)
     # Жиектегі ақшыл пикселдерді жартылай мөлдір етеміз (тегіс шеті)
     for y in range(h):
         for x in range(w):

@@ -220,6 +220,22 @@ export async function buyItem(id: string, price: number) {
   return true
 }
 
+/** Промокод: дұрыс болса тиын қосылады. Қайтарады: қосылған тиын саны немесе null */
+export async function redeemPromo(code: string) {
+  const { data, error } = await supabase.rpc('redeem_promo', { p_code: code })
+  if (error) {
+    toast(t.errNetwork)
+    return null
+  }
+  const res = String(data)
+  if (res.startsWith('ok:')) {
+    await loadMe()
+    return Number(res.slice(3))
+  }
+  toast(res === 'used' ? t.promoUsed : res === 'limit' ? t.promoLimit : t.promoNotFound)
+  return null
+}
+
 // ---------- Сөздер (аралықпен қайталау) ----------
 
 export async function saveWords(updates: Record<string, WordState>) {

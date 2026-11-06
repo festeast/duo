@@ -5,12 +5,14 @@ import { BANDS } from '../data/words'
 import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
 import { useState } from 'react'
 import { t } from '../i18n/kk'
-import { resetPlacement, signOut } from '../lib/api'
+import { redeemPromo, resetPlacement, signOut } from '../lib/api'
 import { sfx } from '../lib/sound'
 import { levelOf, setState, streakOf, toast, useStore } from '../lib/store'
 
 export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlacement: () => void }) {
   const [perDay, setPerDay] = useState(getNewPerDay())
+  const [promo, setPromo] = useState('')
+  const [promoBusy, setPromoBusy] = useState(false)
   const me = useStore((s) => s.profile)
   const words = useStore((s) => s.words)
   const days = useStore((s) => s.days)
@@ -94,6 +96,39 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           </button>
         )}
       </div>
+
+      <form
+        className="card col"
+        onSubmit={async (e) => {
+          e.preventDefault()
+          if (!promo.trim() || promoBusy) return
+          setPromoBusy(true)
+          const n = await redeemPromo(promo)
+          setPromoBusy(false)
+          if (n) {
+            sfx.coin()
+            toast(t.promoDone(n))
+            setPromo('')
+          }
+        }}
+      >
+        <span className="muted small">🎁 {t.promoTitle}</span>
+        <div className="row">
+          <input
+            className="input"
+            style={{ flex: 1, textTransform: 'uppercase' }}
+            value={promo}
+            placeholder={t.promoPlaceholder}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            onChange={(e) => setPromo(e.target.value)}
+          />
+          <button className="btn" type="submit" disabled={promoBusy || !promo.trim()}>
+            {t.promoApply}
+          </button>
+        </div>
+      </form>
 
       <button className="btn blue wide" onClick={onEdit}>
         🎨 {t.editCat}

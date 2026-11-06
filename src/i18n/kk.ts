@@ -236,6 +236,13 @@ export const t = {
   on: 'қосулы',
   off: 'өшірулі',
   signOut: 'Шығу',
+  promoTitle: 'Промокод',
+  promoPlaceholder: 'Кодты енгіз',
+  promoApply: 'Қолдану',
+  promoDone: (n: number) => `+${n} 🪙 тиын қосылды!`,
+  promoUsed: 'Бұл кодты қолданып қойдың',
+  promoLimit: 'Бұл кодтың мерзімі бітті',
+  promoNotFound: 'Мұндай код жоқ',
 }
 
 export const randomPraise = () => t.correct[Math.floor(Math.random() * t.correct.length)]

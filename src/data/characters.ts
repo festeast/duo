@@ -37,6 +37,9 @@ export const ANCHORS: Record<string, Anchor> = {
   sleepy: { eye: [262, 133], gap: 70, tilt: -13, top: 50, neck: [215, 212] },
   chef: { eye: [200, 158], gap: 58, tilt: -3, top: 4, neck: [200, 235] },
   rocker: { eye: [246, 91], gap: 52, tilt: -8, top: 28, neck: [255, 160] },
+  ninja: { eye: [231, 135], gap: 62, tilt: -2, top: 45, neck: [240, 200] },
+  cool: { eye: [247, 106], gap: 62, tilt: -2, top: 35, neck: [230, 185] },
+  wizard: { eye: [287, 168], gap: 66, tilt: 10, top: 12, neck: [262, 232] },
 }
 
 export function spriteUrl(id: string, mood: string) {
