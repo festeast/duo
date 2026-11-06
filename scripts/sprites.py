@@ -64,9 +64,9 @@ def remove_white_bg(img):
     return img
 
 
-def process(src, dst_dir, mood):
+def process(src, dst_dir, mood, box=None):
     img = remove_white_bg(Image.open(src))
-    img = img.crop(img.getbbox())
+    img = img.crop(box or img.getbbox())
     w, h = img.size
     full = img.resize((round(w * HEIGHT / h), HEIGHT), Image.LANCZOS)
     os.makedirs(dst_dir, exist_ok=True)
@@ -85,20 +85,29 @@ def process(src, dst_dir, mood):
     face.alpha_composite(img.crop((left, y0, left + side, y0 + side)))
     face = face.resize((FACE, FACE), Image.LANCZOS)
     face.save(f'{dst_dir}/{mood}-face.webp', 'WEBP', quality=88, method=6)
-    return full.size
+    k = HEIGHT / h
+    return full.size, [round(left * k), round(y0 * k), round(side * k)]
 
 
 if __name__ == '__main__':
+    import json
     src_root = sys.argv[1] if len(sys.argv) > 1 else SRC
-    done = []
+    meta = {}
     for char in sorted(os.listdir(src_root)):
         d = os.path.join(src_root, char)
         if not os.path.isdir(d):
             continue
-        for f in sorted(os.listdir(d)):
-            mood, ext = os.path.splitext(f)
-            if ext.lower() not in ('.png', '.jpg', '.jpeg', '.webp') or mood not in ('normal', 'happy', 'sad'):
-                continue
-            size = process(os.path.join(d, f), os.path.join(OUT, char), mood)
-            done.append(f'{char}/{mood} {size}')
-    print('\n'.join(done) or 'сурет табылмады')
+        files = [f for f in sorted(os.listdir(d)) if os.path.splitext(f)[1].lower() in ('.png', '.jpg', '.jpeg', '.webp')
+                 and os.path.splitext(f)[0] in ('normal', 'happy', 'sad')]
+        # Барлық көңіл-күйге бір қиық — сонда заттар бәрінде бір жерде тұрады
+        boxes = [remove_white_bg(Image.open(os.path.join(d, f))).getbbox() for f in files]
+        box = (min(b[0] for b in boxes), min(b[1] for b in boxes), max(b[2] for b in boxes), max(b[3] for b in boxes))
+        moods = []
+        for f in files:
+            mood = os.path.splitext(f)[0]
+            size, face = process(os.path.join(d, f), os.path.join(OUT, char), mood, box)
+            moods.append(mood)
+            print(char, mood, size)
+        meta[char] = {'w': size[0], 'h': size[1], 'face': face, 'moods': moods}
+    with open('src/data/sprites.json', 'w') as fh:
+        json.dump(meta, fh, indent=1)

@@ -1,0 +1,94 @@
+{
+ "chef": {
+  "w": 359,
+  "h": 900,
+  "face": [
+   70,
+   54,
+   216
+  ],
+  "moods": [
+   "normal"
+  ]
+ },
+ "classic": {
+  "w": 324,
+  "h": 900,
+  "face": [
+   19,
+   0,
+   216
+  ],
+  "moods": [
+   "happy",
+   "normal",
+   "sad"
+  ]
+ },
+ "muscle": {
+  "w": 494,
+  "h": 900,
+  "face": [
+   157,
+   0,
+   180
+  ],
+  "moods": [
+   "happy",
+   "normal",
+   "sad"
+  ]
+ },
+ "rocker": {
+  "w": 571,
+  "h": 900,
+  "face": [
+   146,
+   0,
+   198
+  ],
+  "moods": [
+   "normal"
+  ]
+ },
+ "samurai": {
+  "w": 427,
+  "h": 900,
+  "face": [
+   103,
+   0,
+   180
+  ],
+  "moods": [
+   "happy",
+   "normal",
+   "sad"
+  ]
+ },
+ "sleepy": {
+  "w": 422,
+  "h": 900,
+  "face": [
+   111,
+   0,
+   234
+  ],
+  "moods": [
+   "normal"
+  ]
+ },
+ "smart": {
+  "w": 346,
+  "h": 900,
+  "face": [
+   38,
+   0,
+   216
+  ],
+  "moods": [
+   "happy",
+   "normal",
+   "sad"
+  ]
+ }
+}

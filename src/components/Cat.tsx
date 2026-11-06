@@ -2,7 +2,7 @@ import { memo, useId } from 'react'
 import { EYES, FURS, type Mood } from '../data/cat'
 import type { CatLook } from '../lib/types'
 import { AnimeCatArt, type CharId } from './AnimeCat'
-import { CHARACTERS, spriteUrl } from '../data/characters'
+import { ANCHORS, CHARACTERS, SPRITES, spriteUrl } from '../data/characters'
 
 type Props = {
   look: CatLook
@@ -20,28 +20,57 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
   const uid = useId().replace(/:/g, '')
   const sw = 5 // контур қалыңдығы
 
-  // Салынған суреті бар кейіпкер: үлкенде — бойы толық, кішіде — беті
-  const full = size >= 120
-  const sprite = look.char ? spriteUrl(look.char, mood, !full) : null
-  if (sprite) {
-    const style: React.CSSProperties = {}
-    if (flip) style.transform = 'scaleX(-1)'
-    return full ? (
-      <img
-        src={sprite}
-        alt=""
-        draggable={false}
-        className={`cat cat-sprite ${bounce ? 'bounce' : ''} ${className}`}
-        style={{ ...style, height: size * 1.55, width: 'auto' }}
-      />
-    ) : (
-      <img
-        src={sprite}
-        alt=""
-        draggable={false}
-        className={`cat cat-face ${bounce ? 'bounce' : ''} ${className}`}
-        style={{ ...style, width: size, height: size }}
-      />
+  // Салынған суреті бар кейіпкер: үлкенде — бойы толық, кішіде — беті.
+  // Дүкен заттары суреттің үстіне бас пен мойынның орнына қарай тағылады.
+  const sprite = look.char ? spriteUrl(look.char, mood) : null
+  if (sprite && look.char) {
+    const meta = SPRITES[look.char]
+    const an = ANCHORS[look.char]
+    const full = size >= 120
+    const [fx, fy, fs] = meta.face
+    const vb = full ? [0, 0, meta.w, meta.h] : [fx, fy, fs, fs]
+    const w = full ? (size * 1.55 * meta.w) / meta.h : size
+    const h = full ? size * 1.55 : size
+    // Мысық суретінің координаттары: көздер ортасы (100, 98), арасы 56, төбесі ≈ 38
+    const k = an ? an.gap / 56 : 1
+    const lift = an ? an.eye[1] - an.top - 60 * k : 0
+    const headT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) scale(${k}) translate(-100 -98)`
+    const hatT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) translate(0 ${-lift}) scale(${k}) translate(-100 -98)`
+    const neckT = an && `translate(${an.neck[0]} ${an.neck[1]}) scale(${k * 1.1}) translate(-100 -160)`
+    return (
+      <svg
+        viewBox={vb.join(' ')}
+        width={w}
+        height={h}
+        className={`cat ${full ? 'cat-sprite' : 'cat-face'} ${bounce ? 'bounce' : ''} ${className}`}
+        style={{ overflow: full ? 'visible' : 'hidden', ...(flip ? { transform: 'scaleX(-1)' } : null) }}
+        aria-hidden
+      >
+        {!full && (
+          <defs>
+            <clipPath id={`c${uid}`}>
+              <circle cx={fx + fs / 2} cy={fy + fs / 2} r={fs / 2} />
+            </clipPath>
+          </defs>
+        )}
+        <g clipPath={full ? undefined : `url(#c${uid})`}>
+          {!full && <circle cx={fx + fs / 2} cy={fy + fs / 2} r={fs / 2} className="cat-face-bg" />}
+          <image href={sprite} width={meta.w} height={meta.h} />
+          {an && (
+            <>
+              <g transform={neckT!}>
+                <Neck item={look.neck} />
+              </g>
+              <g transform={headT!}>
+                <Face item={look.face} />
+              </g>
+              <g transform={hatT!}>
+                <Head item={look.head} />
+              </g>
+            </>
+          )}
+        </g>
+      </svg>
     )
   }
 
