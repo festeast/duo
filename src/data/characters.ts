@@ -4,7 +4,7 @@ import type { CharId } from '../components/AnimeCat'
 export type Character = { id: CharId; name: string; desc: string; price: number }
 
 export const CHARACTERS: Character[] = [
-  { id: 'classic', name: 'Аниме мысық', desc: 'Үлкен жылтыр көздер, сүйкімді күлкі', price: 0 },
+  { id: 'classic', name: 'Қарапайым мысық', desc: 'Жолақ худи киген сары мысық', price: 0 },
   { id: 'smart', name: 'Ақылды мысық', desc: 'Көзілдірік, кітап, магистр бөркі', price: 80 },
   { id: 'sleepy', name: 'Ұйқышыл мысық', desc: 'Түнгі бөрік пен жастық', price: 80 },
   { id: 'chef', name: 'Аспаз мысық', desc: 'Палау пісіруге дайын', price: 120 },

@@ -9,7 +9,7 @@ import { Cat } from './Cat'
 export function CharacterPicker() {
   const me = useStore((s) => s.profile)
   if (!me) return null
-  const current = me.cat.char ?? null
+  const current = me.cat.char ?? 'classic'
 
   const choose = (id: string | null) => {
     sfx.meow()
@@ -26,12 +26,6 @@ export function CharacterPicker() {
         {t.charsHint}
       </p>
       <div className="char-grid">
-        {/* Бастапқы (қарапайым) мысық */}
-        <button className={`char-card${current === null ? ' on' : ''}`} onClick={() => choose(null)}>
-          <Cat look={{ ...me.cat, char: null }} size={86} />
-          <b>{t.charBasic}</b>
-          <span className="muted tiny">{current === null ? t.charSelected : t.charChoose}</span>
-        </button>
         {CHARACTERS.map((c) => {
           const owned = c.price === 0 || me.owned.includes(charOwnedId(c.id))
           const selected = current === c.id

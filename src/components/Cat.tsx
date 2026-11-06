@@ -23,10 +23,12 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
 
   // Салынған суреті бар кейіпкер: үлкенде — бойы толық, кішіде — беті.
   // Дүкен заттары суреттің үстіне бас пен мойынның орнына қарай тағылады.
-  const sprite = look.char ? spriteUrl(look.char, mood) : null
-  if (sprite && look.char) {
-    const meta = SPRITES[look.char]
-    const an = ANCHORS[look.char]
+  // Кейіпкер таңдалмаса — қарапайым мысық (classic)
+  const charId = look.char && SPRITES[look.char] ? look.char : 'classic'
+  const sprite = spriteUrl(charId, mood)
+  if (sprite) {
+    const meta = SPRITES[charId]
+    const an = ANCHORS[charId]
     const full = size >= 120
     const [fx, fy, fs] = meta.face
     const vb = full ? [0, 0, meta.w, meta.h] : [fx, fy, fs, fs]

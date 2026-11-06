@@ -34,9 +34,9 @@ export function Auth({ onSignedUp }: { onSignedUp: () => void }) {
     <div className="screen auth">
       <div className="hero">
         <div className="duo-cats">
-          <Cat look={{ fur: 'ginger', eyes: 'green', ear: 'ear-ring', cheek: 'blush' }} size={120} bounce />
+          <Cat look={{ fur: 'ginger', eyes: 'green', char: 'classic', ear: 'ear-ring', cheek: 'blush' }} size={120} bounce />
           <span className="heart beat">♥</span>
-          <Cat look={{ fur: 'gray', eyes: 'blue', ear: 'ear-ribbon', cheek: 'heart-paint' }} size={120} bounce flip />
+          <Cat look={{ fur: 'gray', eyes: 'blue', char: 'smart', ear: 'ear-ribbon', cheek: 'heart-paint' }} size={120} bounce flip />
         </div>
         <h1 className="logo">{t.appName}</h1>
         <p className="muted">{t.tagline} 🇰🇿 → 🇹🇷</p>
