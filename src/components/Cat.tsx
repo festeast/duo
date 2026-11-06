@@ -2,7 +2,7 @@ import { memo, useId } from 'react'
 import { EYES, FURS, type Mood } from '../data/cat'
 import type { CatLook } from '../lib/types'
 import { AnimeCatArt, type CharId } from './AnimeCat'
-import { GearDefs, GearFace, GearHead, GearNeck, HATS } from './SpriteGear'
+import { Accessories, SVG_CAT_ANCHOR } from './Accessories'
 import { ANCHORS, CHARACTERS, SPRITES, spriteUrl } from '../data/characters'
 
 type Props = {
@@ -33,15 +33,7 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
     const w = full ? (size * 1.55 * meta.w) / meta.h : size
     const h = full ? size * 1.55 : size
     // Мысық суретінің координаттары: көздер ортасы (100, 98), арасы 56, төбесі ≈ 38
-    const k = an ? an.gap / 56 : 1
-    // Аниме суреттерде шаш көлемді — заттарды сәл үлкейтеміз
-    const hk = k * (an?.headScale ?? 1.3)
-    const lift = an ? an.eye[1] - an.top - 60 * hk : 0
-    const headT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) scale(${hk}) translate(-100 -98)`
-    const faceT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) scale(${k * 1.12}) translate(-100 -98)`
-    const hatT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) translate(0 ${-lift}) scale(${hk}) translate(-100 -98)`
-    const neckT = an && `translate(${an.neck[0]} ${an.neck[1]}) rotate(${an.neckTilt ?? 0}) scale(${k * (an.neckScale ?? 1.3)}) translate(-100 -160)`
-    const isHat = !!look.head && HATS.has(look.head)
+    const fa = an ? (an.moods?.[mood] ?? an) : null
     return (
       <svg
         viewBox={vb.join(' ')}
@@ -61,20 +53,7 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
         <g clipPath={full ? undefined : `url(#c${uid})`}>
           {!full && <circle cx={fx + fs / 2} cy={fy + fs / 2} r={fs / 2} className="cat-face-bg" />}
           <image href={sprite} width={meta.w} height={meta.h} />
-          {an && (
-            <>
-              <GearDefs id={`q${uid}`} />
-              <g transform={neckT!}>
-                <GearNeck item={look.neck} id={`q${uid}`} />
-              </g>
-              <g transform={faceT!}>
-                <GearFace item={look.face} id={`q${uid}`} />
-              </g>
-              <g transform={isHat ? hatT! : headT!}>
-                <GearHead item={look.head} id={`q${uid}`} />
-              </g>
-            </>
-          )}
+          {fa && <Accessories look={look} an={fa} id={`a${uid}`} />}
         </g>
       </svg>
     )
@@ -123,7 +102,6 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
         <ellipse cx="122" cy="208" rx="17" ry="10" fill={f.fur} />
       </g>
 
-      <Neck item={look.neck} />
 
       <g stroke={f.line} strokeWidth={sw} strokeLinejoin="round" strokeLinecap="round">
         {/* Құлақтар */}
@@ -196,127 +174,9 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
         <path d="M156 120 L182 122" />
       </g>
 
-      <Face item={look.face} />
-      <Head item={look.head} />
+      <Accessories look={look} an={SVG_CAT_ANCHOR} id={`a${uid}`} faceScale={1} />
     </svg>
   )
-}
-
-function Neck({ item }: { item?: string | null }) {
-  switch (item) {
-    case 'scarf':
-      return (
-        <g strokeLinejoin="round">
-          <path d="M44 140 Q100 168 156 140 L158 156 Q100 184 42 156 Z" fill="#E4505F" stroke="#9E2B39" strokeWidth="4" />
-          <path d="M60 156 L52 196 L74 196 L76 160 Z" fill="#E4505F" stroke="#9E2B39" strokeWidth="4" />
-          <path d="M56 182 L72 182" stroke="#fff" strokeWidth="4" opacity=".7" />
-          <path d="M70 152 Q100 166 130 152" stroke="#fff" strokeWidth="4" fill="none" opacity=".6" />
-        </g>
-      )
-    case 'bell':
-      return (
-        <g>
-          <path d="M50 146 Q100 168 150 146" stroke="#3D7BD9" strokeWidth="10" fill="none" strokeLinecap="round" />
-          <circle cx="100" cy="166" r="13" fill="#F6C343" stroke="#A9781A" strokeWidth="4" />
-          <path d="M92 168 L108 168" stroke="#A9781A" strokeWidth="3" />
-          <circle cx="100" cy="173" r="2.5" fill="#A9781A" />
-        </g>
-      )
-    case 'bowtie':
-      return (
-        <g stroke="#1E1E2A" strokeWidth="4" strokeLinejoin="round">
-          <path d="M100 160 L72 146 L72 176 Z" fill="#E4505F" />
-          <path d="M100 160 L128 146 L128 176 Z" fill="#E4505F" />
-          <circle cx="100" cy="160" r="8" fill="#B8323F" />
-        </g>
-      )
-    default:
-      return null
-  }
-}
-
-function Face({ item }: { item?: string | null }) {
-  switch (item) {
-    case 'glasses':
-      return (
-        <g stroke="#2B2B36" strokeWidth="5" fill="#ffffff22">
-          <circle cx="72" cy="99" r="22" />
-          <circle cx="128" cy="99" r="22" />
-          <path d="M94 96 Q100 90 106 96" fill="none" />
-          <path d="M50 94 L34 88 M150 94 L166 88" />
-        </g>
-      )
-    case 'shades':
-      return (
-        <g stroke="#111" strokeWidth="4" strokeLinejoin="round">
-          <path d="M48 86 L96 86 L92 108 Q72 120 54 108 Z" fill="#1E1E2A" />
-          <path d="M152 86 L104 86 L108 108 Q128 120 146 108 Z" fill="#1E1E2A" />
-          <path d="M96 90 L104 90" />
-          <path d="M58 92 L68 92" stroke="#fff" strokeWidth="4" opacity=".6" />
-          <path d="M112 92 L122 92" stroke="#fff" strokeWidth="4" opacity=".6" />
-        </g>
-      )
-    default:
-      return null
-  }
-}
-
-function Head({ item }: { item?: string | null }) {
-  switch (item) {
-    case 'bow':
-      return (
-        <g transform="translate(46 34) rotate(-20)" stroke="#C2406A" strokeWidth="4" strokeLinejoin="round">
-          <path d="M0 0 L-24 -14 L-24 14 Z" fill="#FF7BAC" />
-          <path d="M0 0 L24 -14 L24 14 Z" fill="#FF7BAC" />
-          <circle r="7" fill="#E05590" />
-        </g>
-      )
-    case 'flower':
-      return (
-        <g transform="translate(150 36)">
-          {[0, 72, 144, 216, 288].map((a) => (
-            <ellipse key={a} cx="0" cy="-12" rx="8" ry="12" fill="#FFFFFF" stroke="#E7A6C2" strokeWidth="3" transform={`rotate(${a})`} />
-          ))}
-          <circle r="7" fill="#F6C343" stroke="#C99A1E" strokeWidth="3" />
-        </g>
-      )
-    case 'tophat':
-      return (
-        <g stroke="#111" strokeWidth="4" strokeLinejoin="round">
-          <rect x="70" y="-6" width="60" height="48" rx="6" fill="#2A2A36" />
-          <rect x="70" y="26" width="60" height="10" fill="#C83E4D" />
-          <ellipse cx="100" cy="42" rx="48" ry="10" fill="#2A2A36" />
-        </g>
-      )
-    case 'fez':
-      return (
-        <g strokeLinejoin="round">
-          <path d="M72 44 L80 2 L120 2 L128 44 Z" fill="#C8303F" stroke="#7E1A24" strokeWidth="4" />
-          <ellipse cx="100" cy="3" rx="20" ry="5" fill="#A8222F" stroke="#7E1A24" strokeWidth="3" />
-          <path d="M100 3 Q124 8 128 30" stroke="#1E1E2A" strokeWidth="3" fill="none" />
-          <path d="M124 28 L132 28 L134 44 L122 44 Z" fill="#F6C343" stroke="#A9781A" strokeWidth="2" />
-        </g>
-      )
-    case 'crown':
-      return (
-        <g stroke="#A9781A" strokeWidth="4" strokeLinejoin="round">
-          <path d="M64 44 L60 6 L82 26 L100 0 L118 26 L140 6 L136 44 Z" fill="#F6C343" />
-          <circle cx="100" cy="30" r="6" fill="#E4505F" />
-          <circle cx="78" cy="34" r="4" fill="#3D9BE9" />
-          <circle cx="122" cy="34" r="4" fill="#3D9BE9" />
-        </g>
-      )
-    case 'headphones':
-      return (
-        <g strokeLinejoin="round">
-          <path d="M28 100 C24 30 176 30 172 100" stroke="#2A2A36" strokeWidth="10" fill="none" strokeLinecap="round" />
-          <rect x="14" y="84" width="24" height="40" rx="10" fill="#9B6BDF" stroke="#4E2E86" strokeWidth="4" />
-          <rect x="162" y="84" width="24" height="40" rx="10" fill="#9B6BDF" stroke="#4E2E86" strokeWidth="4" />
-        </g>
-      )
-    default:
-      return null
-  }
 }
 
 export const Cat = memo(CatInner)

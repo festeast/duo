@@ -13,7 +13,7 @@ import type { CatLook, DialogSession } from '../lib/types'
 import type { LessonResult } from './Result'
 import type { DialogStart } from './Together'
 
-const BOT = { name: 'Мысық', cat: { fur: 'cream', eyes: 'violet', head: 'flower' } as CatLook }
+const BOT = { name: 'Мысық', cat: { fur: 'cream', eyes: 'violet', ear: 'ear-pearl', cheek: 'blush' } as CatLook }
 
 type View = { status: DialogSession['status']; step: number; myTries: number[] }
 

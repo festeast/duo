@@ -29,7 +29,7 @@ export function Shop() {
           const wearing = me.cat[item.slot] === item.id
           return (
             <div key={item.id} className={`card shop-item${wearing ? ' wearing' : ''}`}>
-              <Cat look={{ ...me.cat, head: null, face: null, neck: null, [item.slot]: item.id }} size={84} />
+              <Cat look={{ ...me.cat, ear: null, face: null, cheek: null, [item.slot]: item.id }} size={84} />
               <b>{item.name}</b>
               <span className="muted tiny">{t.slots[item.slot]}</span>
               {owned ? (

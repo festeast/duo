@@ -5,8 +5,8 @@ const server = await createServer({ root: '/home/user/duo', server: { middleware
 const { Cat } = await server.ssrLoadModule('/src/components/Cat.tsx')
 const React = await import('react'); const { renderToStaticMarkup } = await import('react-dom/server')
 const chars = process.argv[3].split(',')
-const items = [{head:'crown'},{head:'tophat'},{head:'fez'},{head:'bow'},{head:'flower'},{head:'headphones'},{face:'glasses'},{face:'shades'},{neck:'scarf'},{neck:'bell'},{neck:'bowtie'}]
-const els = chars.map(c => React.createElement('div',{key:c,style:{display:'flex',gap:4}}, items.map((it,i)=>React.createElement('div',{key:i,style:{height:190,overflow:'hidden'}},React.createElement(Cat,{look:{fur:'ginger',eyes:'green',char:c,...it},size:280,mood:'normal'})))))
+const items = [{ear:'ear-ring',cheek:'blush'},{ear:'ear-pearl',face:'monocle'},{ear:'ear-star',cheek:'star-paint'},{ear:'ear-ribbon',face:'heart-glasses'},{ear:'ear-cuff',cheek:'plaster'},{face:'star-glasses',cheek:'heart-paint'},{face:'eyepatch'}]
+const els = chars.map(c => React.createElement('div',{key:c,style:{display:'flex',gap:4}}, items.map((it,i)=>React.createElement('div',{key:i,style:{height:175,overflow:'hidden'}},React.createElement(Cat,{look:{fur:'ginger',eyes:'green',char:c,...it},size:280,mood:process.argv[4]||'normal'})))))
 const html = renderToStaticMarkup(React.createElement(React.Fragment,null,els))
 await server.close()
 const b = await chromium.launch(); const p = await b.newPage({ viewport: { width: 3000, height: 200*chars.length+20 } })

@@ -206,7 +206,7 @@ export const t = {
   wear: 'Кию',
   takeOff: 'Шешу',
   notEnough: 'Тиын жетпейді',
-  slots: { head: 'Бас киім', face: 'Бет', neck: 'Мойын' } as Record<string, string>,
+  slots: { ear: 'Құлақ', face: 'Көз', cheek: 'Ұрт' } as Record<string, string>,
 
   // Кейіпкерлер
   charsTitle: 'Менің кейіпкерім',
