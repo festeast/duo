@@ -22,7 +22,7 @@ export const charOwnedId = (id: string) => `char-${id}`
 // Жоқ көңіл-күй → normal. Суреті жоқ кейіпкерлер SVG-мен салынады.
 import SPRITE_META from './sprites.json'
 
-export type SpriteMeta = { w: number; h: number; face: number[]; moods: string[] }
+export type SpriteMeta = { w: number; h: number; face: number[]; moods: string[]; v?: string }
 export const SPRITES = SPRITE_META as Record<string, SpriteMeta>
 
 /** Дүкен заттарын суретке тағу үшін нүктелер (900 биіктіктегі сурет пикселі):
@@ -46,5 +46,5 @@ export function spriteUrl(id: string, mood: string) {
   const meta = SPRITES[id]
   if (!meta) return null
   const m = meta.moods.includes(mood) ? mood : 'normal'
-  return `/sprites/${id}/${m}.webp`
+  return `/sprites/${id}/${m}.webp${meta.v ? `?v=${meta.v}` : ''}`
 }

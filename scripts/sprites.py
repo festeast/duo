@@ -101,6 +101,16 @@ def process(src, dst_dir, mood, box=None):
     return full.size, [round(left * k), round(y0 * k), round(side * k)]
 
 
+def version(dir_):
+    """Суреттер өзгерсе — сілтеме де өзгереді (телефондағы кэш ескі суретті көрсетпеуі үшін)"""
+    import hashlib
+    hsh = hashlib.sha1()
+    for f in sorted(os.listdir(dir_)):
+        with open(os.path.join(dir_, f), 'rb') as fh:
+            hsh.update(fh.read())
+    return hsh.hexdigest()[:8]
+
+
 if __name__ == '__main__':
     import json
     src_root = sys.argv[1] if len(sys.argv) > 1 else SRC
@@ -120,6 +130,6 @@ if __name__ == '__main__':
             size, face = process(os.path.join(d, f), os.path.join(OUT, char), mood, box)
             moods.append(mood)
             print(char, mood, size)
-        meta[char] = {'w': size[0], 'h': size[1], 'face': face, 'moods': moods}
+        meta[char] = {'w': size[0], 'h': size[1], 'face': face, 'moods': moods, 'v': version(os.path.join(OUT, char))}
     with open('src/data/sprites.json', 'w') as fh:
         json.dump(meta, fh, indent=1)

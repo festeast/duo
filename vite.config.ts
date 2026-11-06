@@ -36,7 +36,7 @@ export default defineConfig({
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/sprites/'),
             handler: 'CacheFirst',
-            options: { cacheName: 'duo-sprites', expiration: { maxEntries: 100 } },
+            options: { cacheName: 'duo-sprites-v2', expiration: { maxEntries: 120 } },
           },
         ],
       },

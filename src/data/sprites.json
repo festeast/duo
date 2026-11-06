@@ -9,7 +9,8 @@
   ],
   "moods": [
    "normal"
-  ]
+  ],
+  "v": "ae0f875c"
  },
  "classic": {
   "w": 324,
@@ -23,7 +24,8 @@
    "happy",
    "normal",
    "sad"
-  ]
+  ],
+  "v": "a2880b3b"
  },
  "cool": {
   "w": 380,
@@ -35,7 +37,8 @@
   ],
   "moods": [
    "normal"
-  ]
+  ],
+  "v": "f0e2252f"
  },
  "muscle": {
   "w": 494,
@@ -49,7 +52,8 @@
    "happy",
    "normal",
    "sad"
-  ]
+  ],
+  "v": "44fa91a6"
  },
  "ninja": {
   "w": 557,
@@ -61,7 +65,8 @@
   ],
   "moods": [
    "normal"
-  ]
+  ],
+  "v": "29ab514f"
  },
  "rocker": {
   "w": 571,
@@ -73,7 +78,8 @@
   ],
   "moods": [
    "normal"
-  ]
+  ],
+  "v": "6e19e77f"
  },
  "samurai": {
   "w": 427,
@@ -87,7 +93,8 @@
    "happy",
    "normal",
    "sad"
-  ]
+  ],
+  "v": "251cf244"
  },
  "sleepy": {
   "w": 422,
@@ -99,7 +106,8 @@
   ],
   "moods": [
    "normal"
-  ]
+  ],
+  "v": "5844cbd7"
  },
  "smart": {
   "w": 346,
@@ -113,7 +121,8 @@
    "happy",
    "normal",
    "sad"
-  ]
+  ],
+  "v": "d8f7002f"
  },
  "wizard": {
   "w": 575,
@@ -127,6 +136,7 @@
    "happy",
    "normal",
    "sad"
-  ]
+  ],
+  "v": "75b08ba3"
  }
 }
