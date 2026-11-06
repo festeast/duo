@@ -140,13 +140,21 @@ if (typeof document !== 'undefined') {
   document.addEventListener('pointerdown', unlock)
 }
 
+// Мәтінді салыстыруға келтіру: кіші әріп, тыныс белгілерсіз («Merhaba,» → «merhaba»)
+const norm = (t: string) => t.toLocaleLowerCase('tr').replace(/[.,!?;:“”"«»—…()]/g, '').trim()
+
 function fileFor(text: string) {
-  for (const t of [text, text.toLocaleLowerCase('tr')]) {
+  for (const t of [text, text.trim(), text.toLocaleLowerCase('tr'), norm(text)]) {
     const k = audioKey(t)
     if (AUDIO_KEYS.has(k)) return k
   }
   return null
 }
+
+/** Бұл мәтіннің Google жазбасы бар ма */
+export const hasRecording = (text: string) => fileFor(text) !== null
+
+let seq = 0 // тізбекті ойнатуды тоқтату үшін
 
 /** Дыбысты тоқтату (келесі тапсырмаға өткенде) */
 export function stopSpeaking() {
@@ -154,7 +162,11 @@ export function stopSpeaking() {
 }
 
 function stopAll() {
-  if (player) player.pause()
+  seq++
+  if (player) {
+    player.onended = null
+    player.pause()
+  }
   if (canSpeak()) speechSynthesis.cancel()
 }
 
@@ -166,28 +178,58 @@ function currentVoice() {
 
 export function speak(text: string, slow = false) {
   stopAll()
+  playOne(text, slow, seq)
+}
+
+/** Бірнеше сөйлемді қатарынан ойнату (мысалы, бүкіл әңгіме) */
+export function speakAll(texts: string[]) {
+  stopAll()
+  const my = seq
+  let i = 0
+  const next = () => {
+    if (my !== seq || i >= texts.length) return
+    playOne(texts[i++], false, my, next)
+  }
+  next()
+}
+
+/** Бір мәтінді ойнату. Google жазбасы болса — тек соны қолданамыз (iPhone-ның ескі дауысына ауыспаймыз). */
+function playOne(text: string, slow: boolean, my: number, onDone?: () => void) {
   const choice = getVoiceUri() ?? DEFAULT_VOICE
   const rate = RATES.find((r) => r.id === getRateId())?.value ?? 0.85
   const cloud = CLOUD_VOICES.find((v) => v.id === choice)
   const key = cloud ? fileFor(text) : null
   const p = getPlayer()
   if (cloud && key && p) {
-    p.muted = false
-    p.src = `/audio/${cloud.dir}/${key}.mp3`
-    // Жазылған дауыс табиғи жылдамдықта: «Қалыпты» = 1.0
-    p.playbackRate = slow ? 0.7 : rate / 0.85
-    ;(p as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true
-    void p.play().catch(() => speakDevice(text, slow))
+    const play = (dir: string, retry: boolean) => {
+      if (my !== seq) return
+      p.muted = false
+      p.src = `/audio/${dir}/${key}.mp3`
+      // Жазылған дауыс табиғи жылдамдықта: «Қалыпты» = 1.0
+      p.playbackRate = slow ? 0.7 : rate / 0.85
+      ;(p as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true
+      p.onended = () => onDone?.()
+      p.play().catch((err: DOMException) => {
+        // iPhone дыбысты уақытша бұғаттаса (NotAllowedError) — ескі дауысқа ауыспаймыз, жай үнсіз қаламыз.
+        // Файл табылмаса — екінші Google дауысын байқап көреміз.
+        if (err?.name === 'NotAllowedError' || err?.name === 'AbortError') return
+        if (retry) play(dir === 'female' ? 'male' : 'female', false)
+        else onDone?.()
+      })
+    }
+    play(cloud.dir, true)
     return
   }
-  speakDevice(text, slow)
+  // Google жазбасы жоқ мәтін (сирек: басқа есімдер т.б.) — телефон дауысы
+  speakDevice(text, slow, onDone)
 }
 
 /** Телефонның өз дауысымен айту */
-function speakDevice(text: string, slow: boolean) {
-  if (!canSpeak()) return
+function speakDevice(text: string, slow: boolean, onDone?: () => void) {
+  if (!canSpeak()) return onDone?.()
   speechSynthesis.cancel()
   const u = new SpeechSynthesisUtterance(text)
+  u.onend = () => onDone?.()
   u.lang = 'tr-TR'
   const v = currentVoice()
   try {

@@ -1,5 +1,6 @@
 import { Cat } from '../components/Cat'
 import { VoiceSettings } from '../components/VoiceSettings'
+import { CharacterPicker } from '../components/CharacterPicker'
 import { BANDS } from '../data/words'
 import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
 import { useState } from 'react'
@@ -31,6 +32,8 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           <i style={{ width: `${lvl.progress * 100}%` }} />
         </div>
       </div>
+
+      <CharacterPicker />
 
       <div className="stat-row">
         <div className="stat">

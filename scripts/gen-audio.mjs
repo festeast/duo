@@ -20,6 +20,7 @@ const load = (p) => server.ssrLoadModule(p)
 const { WORD_LIST, SENTENCE_BANK } = await load('/src/data/words.ts')
 const { STORIES } = await load('/src/data/stories.ts')
 const { TIPS } = await load('/src/data/grammar.ts')
+const { DIALOGS, EPISODES, personalize } = await load('/src/data/dialogs.ts')
 const { audioKey } = await load('/src/lib/audioKey.ts')
 await server.close()
 
@@ -30,6 +31,17 @@ const phrases = [
   ...TIPS.flatMap((t) => t.examples.map((e) => e[0])),
   'Merhaba! Birlikte Türkçe öğreniyoruz.',
 ]
+
+// Сөйлемдегі әр сөз түрі (плиткаларды басқанда, әңгімедегі сөзді басқанда айтылады)
+const norm = (t) => t.toLocaleLowerCase('tr').replace(/[.,!?;:“”"«»—…()]/g, '').trim()
+const tokens = new Set()
+for (const t of [...SENTENCE_BANK.map((x) => x.tr), ...STORIES.flatMap((x) => x.lines.map((l) => l[0]))])
+  for (const w of t.split(/\s+/)) if (norm(w)) tokens.add(norm(w))
+phrases.push(...tokens)
+
+// Есімдері бар диалог репликалары (Әділхан мен Шырайлым үшін, екі рөлде де)
+for (const names of [{ A: 'Әділхан', B: 'Шырайлым' }, { A: 'Шырайлым', B: 'Әділхан' }])
+  for (const d of [...DIALOGS, ...EPISODES]) for (const l of personalize(d, names).lines) phrases.push(l.tr)
 const unique = [...new Map(phrases.map((p) => [audioKey(p), p])).entries()]
 
 // Chirp3-HD бір сөзді (ay, ev, o…) жеке жібергенде кейде «ақ шу» қайтарады.

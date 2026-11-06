@@ -208,6 +208,13 @@ export const t = {
   notEnough: 'Тиын жетпейді',
   slots: { head: 'Бас киім', face: 'Бет', neck: 'Мойын' } as Record<string, string>,
 
+  // Кейіпкерлер
+  charsTitle: 'Менің кейіпкерім',
+  charsHint: 'Аниме стиліндегі мысықтар. Тиынға сатып ал — жүн мен көз түсі өзіңдікі болып қалады.',
+  charBasic: 'Қарапайым мысық',
+  charSelected: '✓ Таңдалған',
+  charChoose: 'Таңдау',
+
   // Профиль
   profile: 'Профиль',
   totalXp: 'Барлық XP',

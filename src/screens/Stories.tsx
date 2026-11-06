@@ -4,7 +4,7 @@ import { analyze, wordByTr } from '../data/words'
 import { t } from '../i18n/kk'
 import { addXp } from '../lib/api'
 import { sfx } from '../lib/sound'
-import { speak, stopSpeaking } from '../lib/speech'
+import { speak, speakAll, stopSpeaking } from '../lib/speech'
 import { dayKey } from '../lib/store'
 
 const READ_KEY = 'duo-stories-read'
@@ -143,7 +143,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
         ))}
       </div>
 
-      <button className="btn blue wide" onClick={() => speak(story.lines.map((l) => l[0]).join(' '))}>
+      <button className="btn blue wide" onClick={() => speakAll(story.lines.map((l) => l[0]))}>
         🔊 {t.listenAll}
       </button>
       {finished ? (

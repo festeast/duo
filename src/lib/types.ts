@@ -1,6 +1,6 @@
 import type { EyeId, FurId } from '../data/cat'
 
-export type CatLook = { fur: FurId; eyes: EyeId; head?: string | null; face?: string | null; neck?: string | null }
+export type CatLook = { fur: FurId; eyes: EyeId; head?: string | null; face?: string | null; neck?: string | null; char?: string | null }
 
 export type Profile = {
   id: string

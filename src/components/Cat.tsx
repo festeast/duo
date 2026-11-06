@@ -1,6 +1,8 @@
 import { memo, useId } from 'react'
 import { EYES, FURS, type Mood } from '../data/cat'
 import type { CatLook } from '../lib/types'
+import { AnimeCatArt, type CharId } from './AnimeCat'
+import { CHARACTERS } from '../data/characters'
 
 type Props = {
   look: CatLook
@@ -17,6 +19,22 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
   const eye = (EYES[look.eyes] ?? EYES.green).color
   const uid = useId().replace(/:/g, '')
   const sw = 5 // контур қалыңдығы
+
+  // Аниме кейіпкері таңдалса — соны саламыз
+  if (look.char && CHARACTERS.some((c) => c.id === look.char)) {
+    return (
+      <svg
+        viewBox="0 -12 200 232"
+        width={size}
+        height={(size * 232) / 200}
+        className={`cat ${bounce ? 'bounce' : ''} ${className}`}
+        style={flip ? { transform: 'scaleX(-1)' } : undefined}
+        aria-hidden
+      >
+        <AnimeCatArt fur={look.fur} eyes={look.eyes} mood={mood} kind={look.char as CharId} />
+      </svg>
+    )
+  }
 
   return (
     <svg
