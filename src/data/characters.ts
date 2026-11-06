@@ -28,12 +28,21 @@ export const SPRITES = SPRITE_META as Record<string, SpriteMeta>
 /** Дүкен заттарын суретке тағу үшін нүктелер (900 биіктіктегі сурет пикселі):
  *  eye — екі көздің ортасы, gap — көздердің арасы, tilt — бастың қисаюы (градус),
  *  top — бас төбесі (бөрік осы жерге отырады), neck — мойын ортасы */
-export type Anchor = { eye: [number, number]; gap: number; tilt: number; top: number; neck: [number, number] }
+export type Anchor = {
+  eye: [number, number]
+  gap: number
+  tilt: number
+  top: number
+  neck: [number, number]
+  headScale?: number
+  neckScale?: number
+  neckTilt?: number
+}
 export const ANCHORS: Record<string, Anchor> = {
   classic: { eye: [125, 97], gap: 50, tilt: -11, top: 22, neck: [122, 168] },
   smart: { eye: [151, 127], gap: 62, tilt: -13, top: 8, neck: [160, 205] },
   muscle: { eye: [270, 86], gap: 50, tilt: 8, top: 28, neck: [280, 150] },
-  samurai: { eye: [205, 78], gap: 40, tilt: 0, top: 22, neck: [200, 132] },
+  samurai: { eye: [205, 78], gap: 40, tilt: 0, top: 22, neck: [200, 134], headScale: 1.7, neckScale: 1.6 },
   sleepy: { eye: [262, 133], gap: 70, tilt: -13, top: 50, neck: [215, 212] },
   chef: { eye: [200, 158], gap: 58, tilt: -3, top: 4, neck: [200, 235] },
   rocker: { eye: [246, 91], gap: 52, tilt: -8, top: 28, neck: [255, 160] },

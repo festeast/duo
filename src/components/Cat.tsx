@@ -2,6 +2,7 @@ import { memo, useId } from 'react'
 import { EYES, FURS, type Mood } from '../data/cat'
 import type { CatLook } from '../lib/types'
 import { AnimeCatArt, type CharId } from './AnimeCat'
+import { GearDefs, GearFace, GearHead, GearNeck, HATS } from './SpriteGear'
 import { ANCHORS, CHARACTERS, SPRITES, spriteUrl } from '../data/characters'
 
 type Props = {
@@ -33,10 +34,14 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
     const h = full ? size * 1.55 : size
     // Мысық суретінің координаттары: көздер ортасы (100, 98), арасы 56, төбесі ≈ 38
     const k = an ? an.gap / 56 : 1
-    const lift = an ? an.eye[1] - an.top - 60 * k : 0
-    const headT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) scale(${k}) translate(-100 -98)`
-    const hatT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) translate(0 ${-lift}) scale(${k}) translate(-100 -98)`
-    const neckT = an && `translate(${an.neck[0]} ${an.neck[1]}) scale(${k * 1.1}) translate(-100 -160)`
+    // Аниме суреттерде шаш көлемді — заттарды сәл үлкейтеміз
+    const hk = k * (an?.headScale ?? 1.3)
+    const lift = an ? an.eye[1] - an.top - 60 * hk : 0
+    const headT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) scale(${hk}) translate(-100 -98)`
+    const faceT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) scale(${k * 1.12}) translate(-100 -98)`
+    const hatT = an && `translate(${an.eye[0]} ${an.eye[1]}) rotate(${an.tilt}) translate(0 ${-lift}) scale(${hk}) translate(-100 -98)`
+    const neckT = an && `translate(${an.neck[0]} ${an.neck[1]}) rotate(${an.neckTilt ?? 0}) scale(${k * (an.neckScale ?? 1.3)}) translate(-100 -160)`
+    const isHat = !!look.head && HATS.has(look.head)
     return (
       <svg
         viewBox={vb.join(' ')}
@@ -58,14 +63,15 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
           <image href={sprite} width={meta.w} height={meta.h} />
           {an && (
             <>
+              <GearDefs id={`q${uid}`} />
               <g transform={neckT!}>
-                <Neck item={look.neck} />
+                <GearNeck item={look.neck} id={`q${uid}`} />
               </g>
-              <g transform={headT!}>
-                <Face item={look.face} />
+              <g transform={faceT!}>
+                <GearFace item={look.face} id={`q${uid}`} />
               </g>
-              <g transform={hatT!}>
-                <Head item={look.head} />
+              <g transform={isHat ? hatT! : headT!}>
+                <GearHead item={look.head} id={`q${uid}`} />
               </g>
             </>
           )}
