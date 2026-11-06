@@ -2,7 +2,7 @@ import { memo, useId } from 'react'
 import { EYES, FURS, type Mood } from '../data/cat'
 import type { CatLook } from '../lib/types'
 import { AnimeCatArt, type CharId } from './AnimeCat'
-import { CHARACTERS } from '../data/characters'
+import { CHARACTERS, spriteUrl } from '../data/characters'
 
 type Props = {
   look: CatLook
@@ -19,6 +19,31 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
   const eye = (EYES[look.eyes] ?? EYES.green).color
   const uid = useId().replace(/:/g, '')
   const sw = 5 // контур қалыңдығы
+
+  // Салынған суреті бар кейіпкер: үлкенде — бойы толық, кішіде — беті
+  const full = size >= 120
+  const sprite = look.char ? spriteUrl(look.char, mood, !full) : null
+  if (sprite) {
+    const style: React.CSSProperties = {}
+    if (flip) style.transform = 'scaleX(-1)'
+    return full ? (
+      <img
+        src={sprite}
+        alt=""
+        draggable={false}
+        className={`cat cat-sprite ${bounce ? 'bounce' : ''} ${className}`}
+        style={{ ...style, height: size * 1.55, width: 'auto' }}
+      />
+    ) : (
+      <img
+        src={sprite}
+        alt=""
+        draggable={false}
+        className={`cat cat-face ${bounce ? 'bounce' : ''} ${className}`}
+        style={{ ...style, width: size, height: size }}
+      />
+    )
+  }
 
   // Аниме кейіпкері таңдалса — соны саламыз
   if (look.char && CHARACTERS.some((c) => c.id === look.char)) {

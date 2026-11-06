@@ -16,6 +16,15 @@ SRC, OUT = 'sprites-src', 'public/sprites'
 HEIGHT = 900      # толық сурет биіктігі
 FACE = 256        # аватар өлшемі
 TOL = 28          # ақ фонды анықтау шегі
+# Аватар қиығы: (ортасы x 0..1 немесе None — автомат, жоғарғы шеті y, өлшемі) — биіктікке қатысты үлес
+FACE_BOX = {
+    'chef': (None, 0.06, 0.24),
+    'smart': (None, 0.0, 0.24),
+    'sleepy': (None, 0.0, 0.26),
+    'muscle': (0.5, 0.0, 0.2),
+    'rocker': (None, 0.0, 0.22),
+    'samurai': (None, 0.0, 0.2),
+}
 
 
 def remove_white_bg(img):
@@ -62,10 +71,19 @@ def process(src, dst_dir, mood):
     full = img.resize((round(w * HEIGHT / h), HEIGHT), Image.LANCZOS)
     os.makedirs(dst_dir, exist_ok=True)
     full.save(f'{dst_dir}/{mood}.webp', 'WEBP', quality=88, method=6)
-    # Бет бөлігі: суреттің жоғарғы бөлігінен, ені бойынша ортасынан шаршы
-    side = round(min(w, h * 0.42))
-    left = max(0, round(w / 2 - side / 2))
-    face = img.crop((left, 0, left + side, side)).resize((FACE, FACE), Image.LANCZOS)
+    # Бет бөлігі: басы тұрған жерден шаршы (кейіпкерге қарай баптауға болады)
+    cx, top, size = FACE_BOX.get(os.path.basename(dst_dir), (None, 0.0, 0.24))
+    if cx is None:
+        # Жоғарғы бөліктегі мөлдір емес пикселдердің ортасы
+        a = img.getchannel('A').crop((0, 0, w, round(h * 0.18)))
+        xs = [x for x in range(w) for y in range(0, a.size[1], 4) if a.getpixel((x, y)) > 128]
+        cx = (sum(xs) / len(xs) / w) if xs else 0.5
+    side = round(h * size)
+    left = min(max(0, round(w * cx - side / 2)), max(0, w - side))
+    y0 = round(h * top)
+    face = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+    face.alpha_composite(img.crop((left, y0, left + side, y0 + side)))
+    face = face.resize((FACE, FACE), Image.LANCZOS)
     face.save(f'{dst_dir}/{mood}-face.webp', 'WEBP', quality=88, method=6)
     return full.size
 

@@ -33,6 +33,11 @@ export default defineConfig({
             handler: 'CacheFirst',
             options: { cacheName: 'duo-audio', expiration: { maxEntries: 2000 } },
           },
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/sprites/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'duo-sprites', expiration: { maxEntries: 100 } },
+          },
         ],
       },
     }),

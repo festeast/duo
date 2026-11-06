@@ -17,3 +17,22 @@ export const CHARACTERS: Character[] = [
 ]
 
 export const charOwnedId = (id: string) => `char-${id}`
+
+// Салынған суреттер (public/sprites/<id>/<mood>.webp). Жоқ көңіл-күй → normal.
+// Суреті жоқ кейіпкерлер SVG-мен салынады.
+export const SPRITES: Record<string, string[]> = {
+  classic: ['normal', 'happy', 'sad'],
+  smart: ['normal', 'happy', 'sad'],
+  muscle: ['normal', 'happy', 'sad'],
+  samurai: ['normal', 'happy', 'sad'],
+  sleepy: ['normal'],
+  chef: ['normal'],
+  rocker: ['normal'],
+}
+
+export function spriteUrl(id: string, mood: string, face: boolean) {
+  const moods = SPRITES[id]
+  if (!moods) return null
+  const m = moods.includes(mood) ? mood : 'normal'
+  return `/sprites/${id}/${m}${face ? '-face' : ''}.webp`
+}
