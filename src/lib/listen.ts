@@ -21,51 +21,101 @@ function ctor(): (new () => Rec) | null {
 
 export const canListen = () => typeof window !== 'undefined' && ctor() !== null
 
-let active: Rec | null = null
+// iPhone (Safari) әр жаңа SpeechRecognition объектісі үшін микрофон рұқсатын қайта сұрайды.
+// Сондықтан бір ғана объектіні жасап, барлық тапсырмада соны қайта қолданамыз —
+// рұқсат бір рет берілсе, қосымша ашық тұрғанда қайта сұралмайды.
+let shared: Rec | null = null
+let busy = false
+let current: { resolve: (a: string[]) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> } | null = null
+
+function recognizer(lang: string): Rec | null {
+  const C = ctor()
+  if (!C) return null
+  if (!shared) {
+    shared = new C()
+    shared.interimResults = false
+    shared.maxAlternatives = 5
+    shared.continuous = false
+    shared.onresult = (e) => {
+      const alts: string[] = []
+      const res = e.results[0]
+      for (let i = 0; i < res.length; i++) alts.push(res[i].transcript)
+      settle((c) => c.resolve(alts))
+    }
+    shared.onerror = (e) => {
+      // Рұқсат берілмесе — объектіні тастаймыз, келесіде қайта сұрай алсын
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') shared = null
+      settle((c) => (e.error === 'no-speech' || e.error === 'aborted' ? c.resolve([]) : c.reject(new Error(e.error))))
+    }
+    shared.onend = () => {
+      busy = false
+      settle((c) => c.resolve([]))
+    }
+  }
+  shared.lang = lang
+  return shared
+}
+
+function settle(fn: (c: NonNullable<typeof current>) => void) {
+  const c = current
+  if (!c) return
+  current = null
+  clearTimeout(c.timer)
+  fn(c)
+}
 
 /** Бір рет тыңдайды. Нәтиже — танылған нұсқалар тізімі. */
 export function listenOnce(lang = 'tr-TR', timeoutMs = 9000): Promise<string[]> {
   return new Promise((resolve, reject) => {
-    const C = ctor()
-    if (!C) return reject(new Error('unsupported'))
-    active?.abort()
+    const r = recognizer(lang)
+    if (!r) return reject(new Error('unsupported'))
     window.speechSynthesis?.cancel()
-    const r = new C()
-    active = r
-    r.lang = lang
-    r.interimResults = false
-    r.maxAlternatives = 5
-    r.continuous = false
-    let done = false
-    const finish = (fn: () => void) => {
-      if (done) return
-      done = true
-      clearTimeout(timer)
-      active = null
-      fn()
+    // Алдыңғы тыңдау аяқталмаса — оны бос нәтижемен жабамыз
+    settle((c) => c.resolve([]))
+    const start = (retry: boolean) => {
+      // current тек осы жерде қойылады: алдыңғы тыңдаудың кеш келген onend-і жаңасын жаппауы үшін
+      const timer = setTimeout(() => {
+        try {
+          r.stop()
+        } catch {
+          /* бос */
+        }
+        settle((c) => c.resolve([]))
+      }, timeoutMs)
+      current = { resolve, reject, timer }
+      try {
+        r.start()
+        busy = true
+      } catch (err) {
+        // Әлі жұмыс істеп тұрса (InvalidStateError) — тоқтатып, сәл күтіп бір рет қайталаймыз
+        current = null
+        clearTimeout(timer)
+        if (!retry) return reject(err as Error)
+        try {
+          r.abort()
+        } catch {
+          /* бос */
+        }
+        setTimeout(() => start(false), 300)
+      }
     }
-    const timer = setTimeout(() => {
-      r.stop()
-      finish(() => resolve([]))
-    }, timeoutMs)
-    r.onresult = (e) => {
-      const alts: string[] = []
-      const res = e.results[0]
-      for (let i = 0; i < res.length; i++) alts.push(res[i].transcript)
-      finish(() => resolve(alts))
-    }
-    r.onerror = (e) => finish(() => (e.error === 'no-speech' ? resolve([]) : reject(new Error(e.error))))
-    r.onend = () => finish(() => resolve([]))
-    try {
-      r.start()
-    } catch (err) {
-      finish(() => reject(err as Error))
-    }
+    if (busy) {
+      try {
+        r.abort()
+      } catch {
+        /* бос */
+      }
+      setTimeout(() => start(true), 300)
+    } else start(true)
   })
 }
 
 export function stopListening() {
-  active?.stop()
+  try {
+    shared?.stop()
+  } catch {
+    /* бос */
+  }
 }
 
 // ---------- Салыстыру ----------

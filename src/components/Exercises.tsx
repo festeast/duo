@@ -279,7 +279,7 @@ export function TypeAnswer({ value, setValue, locked, onEnter }: { value: string
 
 // ---------- Микрофон ----------
 
-type MicState = 'idle' | 'listening' | 'ok' | 'no' | 'error'
+type MicState = 'idle' | 'listening' | 'ok' | 'no' | 'error' | 'denied'
 
 /** Түрікше айтып жауап беру. Микрофон жоқ құрылғыда көрінбейді. */
 export function MicButton({ target, onResult, label = t.micSay }: { target: string; onResult: (ok: boolean, heard: string) => void; label?: string }) {
@@ -303,8 +303,9 @@ export function MicButton({ target, onResult, label = t.micSay }: { target: stri
       if (r.ok) sfx.correct()
       else sfx.wrong()
       onResult(r.ok, r.text)
-    } catch {
-      setState('error')
+    } catch (e) {
+      const m = String((e as Error)?.message ?? '')
+      setState(m === 'not-allowed' || m === 'service-not-allowed' ? 'denied' : 'error')
     }
   }
 
@@ -317,6 +318,7 @@ export function MicButton({ target, onResult, label = t.micSay }: { target: stri
       {state === 'ok' && <span className="ok-text small">✓ {t.micHeard}: «{heard}»</span>}
       {state === 'no' && <span className="error small">{heard ? `${t.micHeard}: «${heard}» — ${t.micTryAgain}` : t.micNothing}</span>}
       {state === 'error' && <span className="error small">{t.micError}</span>}
+      {state === 'denied' && <span className="error small">{t.micDenied}</span>}
     </div>
   )
 }
