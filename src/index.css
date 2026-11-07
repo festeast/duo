@@ -536,3 +536,18 @@ h2.ih, h3.ih { display: flex; }
 .together-streak { display: inline-flex; align-items: center; gap: 4px; }
 .ep-num svg { display: block; }
 .speaker { vertical-align: -3px; color: var(--blue); }
+
+/* Сериал сахнасы */
+.scene-place { display: flex; gap: 8px; font-size: 14px; font-style: italic; color: var(--muted); background: var(--bg-2); border-radius: 12px; padding: 8px 10px; }
+.scene-chat { display: flex; flex-direction: column; gap: 8px; }
+.scene-line { max-width: 86%; display: flex; flex-direction: column; gap: 2px; text-align: left; border: 0; border-radius: 16px; padding: 8px 12px; cursor: pointer; font-weight: 700; color: var(--text); transition: transform 150ms, box-shadow 150ms; }
+.scene-line.left { align-self: flex-start; background: var(--card-2); border-bottom-left-radius: 4px; }
+.scene-line.right { align-self: flex-end; background: var(--blue-soft); border-bottom-right-radius: 4px; }
+.scene-line.now { box-shadow: 0 0 0 2px var(--blue); transform: scale(1.02); }
+.scene-name { font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .03em; }
+.scene-line.f .scene-name { color: #d4548a; }
+.scene-line.m .scene-name { color: var(--blue-dark); }
+.scene-tr { font-size: 16px; }
+.phrase-mark { background: #ffe58a; color: inherit; border-radius: 4px; padding: 0 2px; }
+:root[data-theme='dark'] .phrase-mark { background: #7a5d00; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .phrase-mark { background: #7a5d00; } }

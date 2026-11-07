@@ -25,6 +25,8 @@ export {
   Moon,
   Palette,
   Pause,
+  Play,
+  Square,
   PenLine,
   Repeat,
   Search,

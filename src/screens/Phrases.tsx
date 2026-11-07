@@ -1,14 +1,82 @@
-import { useState } from 'react'
-import { Clapperboard, Lightbulb, Target, Trophy, Volume2, X } from '../components/Icon'
-import { PHRASES } from '../data/phrases'
+import { useEffect, useState } from 'react'
+import { Clapperboard, Lightbulb, Play, Square, Target, Trophy, Volume2, X } from '../components/Icon'
+import { PHRASES, type Phrase } from '../data/phrases'
 import { t } from '../i18n/kk'
 import { addXp } from '../lib/api'
 import { shuffle } from '../lib/exercises'
 import { sfx } from '../lib/sound'
-import { speak, speakAll } from '../lib/speech'
+import { speak, speakAs, speakScene, stopSpeaking } from '../lib/speech'
 import { dayKey } from '../lib/store'
 
 const QUIZ_KEY = 'duo-phrases-quiz'
+const dirOf = (v: 'f' | 'm') => (v === 'f' ? 'female' : 'male') as 'female' | 'male'
+
+/** Репликадағы тіркесті белгілеу (бас әріп, тыныс белгісіне қарамай) */
+function Highlight({ text, phrase }: { text: string; phrase: string }) {
+  const core = phrase.replace(/[.!?]+$/, '')
+  const i = text.toLocaleLowerCase('tr').indexOf(core.toLocaleLowerCase('tr'))
+  if (i < 0) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, i)}
+      <mark className="phrase-mark">{text.slice(i, i + core.length)}</mark>
+      {text.slice(i + core.length)}
+    </>
+  )
+}
+
+/** Сериал сахнасы: сипаттама, кейіпкерлер, чат түріндегі репликалар */
+function SceneView({ p }: { p: Phrase }) {
+  const [playing, setPlaying] = useState(-1)
+  const { scene } = p
+  useEffect(() => () => stopSpeaking(), [])
+  const playAll = () => {
+    if (playing >= 0) {
+      stopSpeaking()
+      return setPlaying(-1)
+    }
+    speakScene(
+      scene.lines.map(([who, tr]) => ({ text: tr, dir: dirOf(scene.cast[who][1]) })),
+      setPlaying,
+    )
+  }
+  return (
+    <div className="col pop" style={{ gap: 10 }}>
+      <div className="scene-place">
+        <Clapperboard size={16} style={{ flexShrink: 0, marginTop: 2 }} />
+        <span>{scene.place}</span>
+      </div>
+      <div className="scene-chat">
+        {scene.lines.map(([who, tr, kk], j) => {
+          const [name, voice] = scene.cast[who]
+          const right = who % 2 === 1
+          return (
+            <button
+              key={j}
+              className={`scene-line ${right ? 'right' : 'left'} ${voice}${playing === j ? ' now' : ''}`}
+              onClick={() => {
+                setPlaying(-1)
+                speakAs(tr, dirOf(voice))
+              }}
+            >
+              <span className="scene-name">{name}</span>
+              <span className="scene-tr">
+                <Highlight text={tr} phrase={p.tr} />
+              </span>
+              <span className="muted small">{kk}</span>
+            </button>
+          )
+        })}
+      </div>
+      <button className="btn blue small" onClick={playAll}>
+        {playing >= 0 ? <Square size={16} /> : <Play size={16} />} {playing >= 0 ? t.sceneStop : t.scenePlay}
+      </button>
+      <span className="small phrase-note ih" style={{ alignItems: 'flex-start' }}>
+        <Lightbulb size={16} style={{ flexShrink: 0, marginTop: 2 }} /> {p.note}
+      </span>
+    </div>
+  )
+}
 
 /** Телехикаялардағы ауызекі тіркестер: тізім + шағын тест */
 export function Phrases() {
@@ -42,27 +110,7 @@ export function Phrases() {
             </span>
             <span className="muted">{open === i ? '▴' : '▾'}</span>
           </button>
-          {open === i && (
-            <div className="col pop" style={{ gap: 8 }}>
-              <span className="small phrase-note ih" style={{ alignItems: 'flex-start' }}>
-                <Lightbulb size={16} style={{ flexShrink: 0, marginTop: 2 }} /> {p.note}
-              </span>
-              <div className="col phrase-ex">
-                {p.ex.map(([tr, kk], j) => (
-                  <button key={j} className="phrase-line" onClick={() => speak(tr)}>
-                    <span className={`who ${j % 2 ? 'b' : 'a'}`}>{j % 2 ? 'B' : 'A'}</span>
-                    <span className="col" style={{ gap: 1, alignItems: 'flex-start', textAlign: 'left' }}>
-                      <span>{tr}</span>
-                      <span className="muted small">{kk}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <button className="btn ghost small" onClick={() => speakAll(p.ex.map((e) => e[0]))}>
-                <Volume2 size={18} /> {t.listenAll}
-              </button>
-            </div>
-          )}
+          {open === i && <SceneView p={p} />}
         </div>
       ))}
     </div>

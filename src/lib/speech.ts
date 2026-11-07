@@ -181,6 +181,30 @@ export function speak(text: string, slow = false) {
   playOne(text, slow, seq)
 }
 
+export type VoiceDir = 'female' | 'male'
+
+/** Бір мәтінді белгілі дауыспен (әйел/ер) айту — сахнадағы кейіпкерлер үшін */
+export function speakAs(text: string, dir: VoiceDir) {
+  stopAll()
+  playOne(text, false, seq, undefined, dir)
+}
+
+/** Сахнаны кезекпен ойнату: әр репликаның өз дауысы. onLine — қазір қай реплика ойнап тұр */
+export function speakScene(items: { text: string; dir: VoiceDir }[], onLine?: (i: number) => void) {
+  stopAll()
+  const my = seq
+  let i = 0
+  const next = () => {
+    if (my !== seq) return
+    if (i >= items.length) return onLine?.(-1)
+    const cur = i++
+    onLine?.(cur)
+    // Репликалар арасында қысқа үзіліс
+    playOne(items[cur].text, false, my, () => setTimeout(next, 350), items[cur].dir)
+  }
+  next()
+}
+
 /** Бірнеше сөйлемді қатарынан ойнату (мысалы, бүкіл әңгіме) */
 export function speakAll(texts: string[]) {
   stopAll()
@@ -194,8 +218,8 @@ export function speakAll(texts: string[]) {
 }
 
 /** Бір мәтінді ойнату. Google жазбасы болса — тек соны қолданамыз (iPhone-ның ескі дауысына ауыспаймыз). */
-function playOne(text: string, slow: boolean, my: number, onDone?: () => void) {
-  const choice = getVoiceUri() ?? DEFAULT_VOICE
+function playOne(text: string, slow: boolean, my: number, onDone?: () => void, force?: VoiceDir) {
+  const choice = force ? `g:${force}` : (getVoiceUri() ?? DEFAULT_VOICE)
   const rate = RATES.find((r) => r.id === getRateId())?.value ?? 0.85
   const cloud = CLOUD_VOICES.find((v) => v.id === choice)
   const key = cloud ? fileFor(text) : null

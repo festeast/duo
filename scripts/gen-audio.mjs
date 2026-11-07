@@ -30,7 +30,7 @@ const phrases = [
   ...SENTENCE_BANK.map((s) => s.tr), // курс, мысалдар, байланыстырушы сөйлемдер, диалогтар, әңгімелер
   ...STORIES.flatMap((s) => s.lines.map((l) => l[0])),
   ...TIPS.flatMap((t) => t.examples.map((e) => e[0])),
-  ...PHRASES.flatMap((p) => [p.tr, ...p.ex.map((e) => e[0])]), // телехикая тіркестері
+  ...PHRASES.flatMap((p) => [p.tr, ...p.scene.lines.map((l) => l[1])]), // телехикая сахналары
   'Merhaba! Birlikte Türkçe öğreniyoruz.',
 ]
 
