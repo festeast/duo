@@ -18,17 +18,19 @@ export function admin() {
 export function initPush() {
   const priv = process.env.VAPID_PRIVATE_KEY
   if (!priv) throw new Error('VAPID_PRIVATE_KEY жоқ')
-  webpush.setVapidDetails('mailto:duo@example.com', process.env.VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY, priv)
+  // Apple жалған mailto-ны қабылдамауы мүмкін — сайт сілтемесін қолданамыз
+  webpush.setVapidDetails(process.env.VAPID_SUBJECT || 'https://duo-delta-lovat.vercel.app', process.env.VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY, priv)
 }
 
 /** Бір адамның барлық құрылғысына жіберу. Ескірген жазылымдарды өшіреді. Қайтарады: жіберілген саны */
-export async function sendTo(db, subs, payload) {
+export async function sendTo(db, subs, payload, errors = []) {
   let sent = 0
   for (const s of subs) {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), { TTL: 6 * 3600 })
       sent++
     } catch (e) {
+      errors.push(`${e?.statusCode ?? ''} ${String(e?.body ?? e?.message ?? e).slice(0, 160)}`.trim())
       if (e?.statusCode === 404 || e?.statusCode === 410) await db.from('push_subs').delete().eq('endpoint', s.endpoint)
       else console.error('push error', e?.statusCode, e?.body)
     }

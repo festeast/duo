@@ -58,10 +58,12 @@ export async function disablePush(): Promise<PushState> {
 }
 
 /** Тексеру хабарламасын жіберу (Vercel функциясы арқылы) */
-export async function testPush() {
+export async function testPush(userId: string) {
+  // Жазылым базада бар екеніне көз жеткіземіз (бұрын өшіп қалса — қайта жазылады)
+  await enablePush(userId)
   const { data } = await supabase.auth.getSession()
   const res = await fetch('/api/push-test', { method: 'POST', headers: { Authorization: `Bearer ${data.session?.access_token ?? ''}` } })
-  const j = (await res.json().catch(() => ({}))) as { sent?: number; error?: string }
-  if (!res.ok) throw new Error(j.error ?? String(res.status))
-  return j.sent ?? 0
+  const j = (await res.json().catch(() => ({}))) as { sent?: number; subs?: number; errors?: string[]; error?: string }
+  if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`)
+  return { sent: j.sent ?? 0, subs: j.subs ?? 0, errors: j.errors ?? [] }
 }

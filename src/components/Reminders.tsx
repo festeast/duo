@@ -9,6 +9,7 @@ export function Reminders() {
   const me = useStore((s) => s.profile)
   const [state, setState] = useState<PushState | null>(null)
   const [busy, setBusy] = useState(false)
+  const [diag, setDiag] = useState('')
   useEffect(() => {
     void pushState().then(setState)
   }, [])
@@ -48,11 +49,17 @@ export function Reminders() {
             disabled={busy}
             onClick={async () => {
               sfx.click()
+              setDiag('')
               try {
-                const n = await testPush()
-                toast(n ? t.remindTestSent : t.remindTestNone)
-              } catch {
+                const r = await testPush(me.id)
+                if (r.sent) toast(t.remindTestSent)
+                else {
+                  toast(r.subs ? t.remindTestRejected : t.remindTestNone)
+                  setDiag(r.errors.join(' · ') || `subs: ${r.subs}`)
+                }
+              } catch (e) {
                 toast(t.remindTestFail)
+                setDiag(String((e as Error)?.message ?? e))
               }
             }}
           >
@@ -63,6 +70,7 @@ export function Reminders() {
           </button>
         </div>
       )}
+      {diag && <span className="tiny muted" style={{ wordBreak: 'break-all' }}>⚙️ {diag}</span>}
     </div>
   )
 }
