@@ -83,6 +83,32 @@ export function checkBuild(ex: Extract<Exercise, { kind: 'build' }>, picked: str
 const fold = (s: string) => s.replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/ı/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
 const clean = (s: string) => normTr(s).replace(/[.,!?;:’'"]/g, '').replace(/\s+/g, ' ').trim()
 
+function lev(a: string, b: string) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
+  for (let j = 1; j <= b.length; j++) d[0][j] = j
+  for (let i = 1; i <= a.length; i++)
+    for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1))
+  return d[a.length][b.length]
+}
+
+/** Диктант: сөз-сөзбен салыстыру. Әр сөз: ok | almost (ş/ç немесе 1 әріп қате) | wrong | missing */
+export type DictWord = { word: string; state: 'ok' | 'almost' | 'wrong' | 'missing' }
+export function checkDictation(input: string, answer: string): { result: 'exact' | 'almost' | 'wrong'; words: DictWord[] } {
+  const got = clean(input).split(' ').filter(Boolean)
+  const want = answer.replace(/[.,!?;:"]/g, '').split(/\s+/).filter(Boolean)
+  const words: DictWord[] = want.map((w, i) => {
+    const g = got[i]
+    const c = clean(w)
+    if (g === undefined) return { word: w, state: 'missing' }
+    if (g === c) return { word: w, state: 'ok' }
+    if (fold(g) === fold(c) || (c.length >= 4 && lev(fold(g), fold(c)) <= 1)) return { word: w, state: 'almost' }
+    return { word: w, state: 'wrong' }
+  })
+  const bad = words.filter((w) => w.state === 'wrong' || w.state === 'missing').length + Math.max(0, got.length - want.length)
+  const result = bad === 0 ? (words.every((w) => w.state === 'ok') ? 'exact' : 'almost') : 'wrong'
+  return { result, words }
+}
+
 /** Жазылған жауапты тексеру: 'exact' | 'almost' (тек ş/ç/ğ т.б. қате) | 'wrong' */
 export function checkTyped(input: string, answer: string): 'exact' | 'almost' | 'wrong' {
   const a = clean(input)

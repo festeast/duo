@@ -1,16 +1,19 @@
 import { Cat } from '../components/Cat'
 import { VoiceSettings } from '../components/VoiceSettings'
 import { CharacterPicker } from '../components/CharacterPicker'
+import { Reminders } from '../components/Reminders'
 import { BANDS } from '../data/words'
 import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
 import { useState } from 'react'
 import { t } from '../i18n/kk'
 import { redeemPromo, resetPlacement, signOut } from '../lib/api'
 import { sfx } from '../lib/sound'
+import { getTheme, setTheme, type Theme } from '../lib/theme'
 import { levelOf, setState, streakOf, toast, useStore } from '../lib/store'
 
 export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlacement: () => void }) {
   const [perDay, setPerDay] = useState(getNewPerDay())
+  const [theme, setThemeState] = useState<Theme>(getTheme())
   const [promo, setPromo] = useState('')
   const [promoBusy, setPromoBusy] = useState(false)
   const me = useStore((s) => s.profile)
@@ -142,6 +145,25 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
       >
         {sound ? '🔊' : '🔇'} {t.sound}: {sound ? t.on : t.off}
       </button>
+      <Reminders />
+      <div className="card col">
+        <span className="muted small">🌙 {t.theme}</span>
+        <div className="seg three">
+          {(['auto', 'light', 'dark'] as Theme[]).map((v) => (
+            <button
+              key={v}
+              className={theme === v ? 'on' : ''}
+              onClick={() => {
+                sfx.click()
+                setTheme(v)
+                setThemeState(v)
+              }}
+            >
+              {t.themes[v]}
+            </button>
+          ))}
+        </div>
+      </div>
       <VoiceSettings />
       <div className="spacer" />
       <button className="btn ghost wide" onClick={() => void signOut()}>

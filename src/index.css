@@ -27,8 +27,9 @@
   color-scheme: light;
 }
 
+/* Түнгі тақырып: Профильде «Авто» болса — iPhone параметріне қарай, болмаса қолмен */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --bg: #1d1b24;
     --bg-2: #262331;
     --card: #2b2836;
@@ -42,6 +43,20 @@
     --shadow: 0 2px 0 #15131b, 0 6px 18px rgba(0, 0, 0, 0.25);
     color-scheme: dark;
   }
+}
+:root[data-theme='dark'] {
+  --bg: #1d1b24;
+  --bg-2: #262331;
+  --card: #2b2836;
+  --card-2: #353142;
+  --line: #3d394b;
+  --text: #f4f1f8;
+  --muted: #a39cae;
+  --green-soft: #1f3b2a;
+  --red-soft: #45242b;
+  --blue-soft: #1f2f47;
+  --shadow: 0 2px 0 #15131b, 0 6px 18px rgba(0, 0, 0, 0.25);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -475,3 +490,22 @@ h3 { font-size: 19px; }
 .char-card:disabled { opacity: .55; }
 .char-price { margin-top: 4px; font-weight: 900; font-size: 13px; color: var(--yellow-dark); }
 .char-price.owned { color: var(--purple); }
+
+/* Диктант: сөз-сөзбен тексеру */
+.dict-diff { display: flex; flex-wrap: wrap; gap: 6px; }
+.dict-w { padding: 4px 9px; border-radius: 10px; font-weight: 800; font-size: 15px; }
+.dict-w.ok { background: var(--green-soft, #E3F7E8); color: var(--green-ink, #217A3A); }
+.dict-w.almost { background: #FFF2CC; color: #8A6400; }
+.dict-w.wrong, .dict-w.missing { background: #FFE1E4; color: #B3263A; }
+.dict-w.missing { opacity: .65; border: 1.5px dashed currentColor; }
+
+/* Сериал тіркестері */
+.phrase { padding: 12px 14px; gap: 10px; display: flex; flex-direction: column; }
+.phrase-head { display: flex; align-items: center; gap: 12px; background: none; border: 0; padding: 0; width: 100%; cursor: pointer; }
+.phrase-emoji { font-size: 30px; width: 40px; text-align: center; flex-shrink: 0; }
+.phrase-tr { font-size: 18px; }
+.phrase-note { background: var(--bg-2); border-radius: 12px; padding: 8px 10px; }
+.phrase-ex { gap: 6px; }
+.phrase-line { display: flex; gap: 10px; align-items: flex-start; background: var(--card-2); border: 0; border-radius: 12px; padding: 8px 10px; cursor: pointer; font-weight: 700; }
+.phrase-line .who { font-size: 18px; line-height: 1.2; }
+.phrase-q { background: var(--bg-2); border: 0; border-radius: 14px; padding: 14px; font-size: 19px; font-weight: 800; text-align: left; cursor: pointer; }

@@ -1,4 +1,5 @@
 // Күнделікті жаттығуды құрастыру (интерфейссіз, тест жазуға ыңғайлы)
+import { hasRecording } from './speech'
 import { SENTENCE_BANK, WORD_LIST, type Sentence, type Word } from '../data/words'
 import { normTr, shuffle, tokenize } from './exercises'
 import type { Plan, WordState } from './srs'
@@ -13,6 +14,10 @@ export type Ex =
   | { kind: 'build'; prompt: string; tiles: string[]; answer: string; tests: string[]; fresh: string[]; review: string[] }
   | { kind: 'sentence'; prompt: string; options: string[]; answer: string; tests: string[]; fresh: string[]; review: string[] }
   | { kind: 'shadow'; tr: string; kk: string }
+  // Тыңдап түсіну: мәтін көрсетілмейді, тек дыбыс — мағынасын таңда
+  | { kind: 'hear'; tr: string; options: string[]; answer: string; tests: string[]; fresh: string[]; review: string[] }
+  // Диктант: тыңдап, сөйлемді толық жаз
+  | { kind: 'dictate'; tr: string; kk: string; answer: string; tests: string[]; fresh: string[]; review: string[] }
 
 const pick = <T,>(arr: T[], n: number) => shuffle(arr).slice(0, n)
 
@@ -89,18 +94,35 @@ export function buildSession(plan: Plan, states: Record<string, WordState>): Ex[
   for (const w of plan.review) if (need.has(w.tr) && plan.fresh.length) pickFor(w.tr, true)
   for (const w of plan.review) if (need.has(w.tr) && chosen.length < plan.fresh.length + 4) pickFor(w.tr, false, 2)
 
+  // Сөйлем тапсырмалары кезектесіп беріледі: құрастыру → тыңдап түсіну → диктант
+  const MODES = ['build', 'hear', 'dictate'] as const
+  let turn = Math.floor(Math.random() * MODES.length)
   for (const s of chosen) {
     const fresh = s.uses.filter((u) => freshSet.has(u))
     const review = s.uses.filter((u) => reviewSet.has(u))
     const tests = [...fresh, ...review]
     const tokens = tokenize(s.tr)
-    if (tokens.length <= 9) {
+    const audio = hasRecording(s.tr)
+    let mode: string = MODES[turn++ % MODES.length]
+    if (mode === 'dictate' && (!audio || tokens.length > 7 || tokens.length < 2)) mode = audio ? 'hear' : 'build'
+    if (mode === 'hear' && !audio) mode = 'build'
+    if (mode === 'build' && tokens.length > 9) mode = 'sentence'
+    const others = () => pick(SENTENCE_BANK.filter((x) => x.tr !== s.tr && x.uses.some((u) => s.uses.includes(u))), 2).map((x) => x.kk)
+    if (mode === 'build') {
       const pool = [...new Set(SENTENCE_BANK.flatMap((x) => tokenize(x.tr)))]
       const extra = pick(pool.filter((x) => !tokens.some((y) => normTr(y) === normTr(x))), 3)
       mixed.push({ kind: 'build', prompt: s.kk, answer: s.tr, tiles: shuffle([...tokens, ...extra]), tests, fresh, review })
+    } else if (mode === 'hear') {
+      const opts = others()
+      while (opts.length < 3) {
+        const x = SENTENCE_BANK[Math.floor(Math.random() * SENTENCE_BANK.length)].kk
+        if (x !== s.kk && !opts.includes(x)) opts.push(x)
+      }
+      mixed.push({ kind: 'hear', tr: s.tr, answer: s.kk, options: shuffle([s.kk, ...opts]), tests, fresh, review })
+    } else if (mode === 'dictate') {
+      mixed.push({ kind: 'dictate', tr: s.tr, kk: s.kk, answer: s.tr, tests, fresh, review })
     } else {
-      const others = pick(SENTENCE_BANK.filter((x) => x.tr !== s.tr && x.uses.some((u) => s.uses.includes(u))), 2).map((x) => x.kk)
-      mixed.push({ kind: 'sentence', prompt: s.tr, answer: s.kk, options: shuffle([s.kk, ...others]), tests, fresh, review })
+      mixed.push({ kind: 'sentence', prompt: s.tr, answer: s.kk, options: shuffle([s.kk, ...others()]), tests, fresh, review })
     }
   }
 

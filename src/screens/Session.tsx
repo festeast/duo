@@ -5,7 +5,7 @@ import { wordByTr } from '../data/words'
 import { buildSession, type Ex } from '../lib/session'
 import { randomPraise, t } from '../i18n/kk'
 import { addXp, saveWords } from '../lib/api'
-import { checkTyped, normTr, shuffle, tokenize } from '../lib/exercises'
+import { checkDictation, checkTyped, normTr, shuffle, tokenize, type DictWord } from '../lib/exercises'
 import { canListen } from '../lib/listen'
 import { sfx } from '../lib/sound'
 import { speak, stopSpeaking } from '../lib/speech'
@@ -16,7 +16,7 @@ import type { LessonResult } from './Result'
 type Q = Ex & { key: number }
 
 function reshuffle(ex: Q, key: number): Q {
-  if (ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence') return { ...ex, key, options: shuffle(ex.options) }
+  if (ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence' || ex.kind === 'hear') return { ...ex, key, options: shuffle(ex.options) }
   if (ex.kind === 'build') return { ...ex, key, tiles: shuffle(ex.tiles) }
   return { ...ex, key }
 }
@@ -29,6 +29,8 @@ const testsOf = (ex: Ex): string[] => {
       return [ex.word.tr]
     case 'build':
     case 'sentence':
+    case 'hear':
+    case 'dictate':
       return ex.tests
     default:
       return []
@@ -50,6 +52,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
   const [checkFailed, setCheckFailed] = useState<Set<string>>(new Set())
   const [mistakes, setMistakes] = useState(0)
   const [solved, setSolved] = useState(0)
+  const [dict, setDict] = useState<DictWord[] | null>(null)
 
   const ex = queue[pos]
   const total = initial.length
@@ -62,6 +65,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     else if (ex?.kind === 'choose' && ex.speak) speak(ex.speak)
     else if (ex?.kind === 'intro') speak(ex.word.tr)
     else if (ex?.kind === 'shadow') speak(ex.tr)
+    else if (ex?.kind === 'hear' || ex?.kind === 'dictate') speak(ex.tr)
   }, [ex])
 
   const markFailed = (words: string[]) => setFailed((f) => new Set([...f, ...words]))
@@ -95,6 +99,14 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       return
     }
     if (ex.kind === 'choose' || ex.kind === 'listen') return sel !== null && normTr(sel) === normTr(ex.answer) ? succeed() : fail()
+    if (ex.kind === 'hear') return sel === ex.answer ? succeed(`🇹🇷 ${ex.tr}`) : fail()
+    if (ex.kind === 'dictate') {
+      const r = checkDictation(typed, ex.answer)
+      setDict(r.words)
+      if (r.result === 'wrong') return fail()
+      speak(ex.answer)
+      return succeed(r.result === 'almost' ? `${t.almostRight} ${ex.answer}` : undefined)
+    }
     if (ex.kind === 'sentence') {
       if (sel === ex.answer) speak(ex.prompt)
       return sel === ex.answer ? succeed() : fail()
@@ -145,14 +157,15 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     setSel(null)
     setPicked([])
     setTyped('')
+    setDict(null)
     setNote(undefined)
     setStatus('idle')
   }
 
   const canCheck =
     (ex.kind === 'build' && picked.length > 0) ||
-    ((ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence' || ex.kind === 'check') && sel !== null) ||
-    (ex.kind === 'type' && typed.trim().length > 0)
+    ((ex.kind === 'choose' || ex.kind === 'listen' || ex.kind === 'sentence' || ex.kind === 'check' || ex.kind === 'hear') && sel !== null) ||
+    ((ex.kind === 'type' || ex.kind === 'dictate') && typed.trim().length > 0)
   const answerText = 'answer' in ex ? ex.answer : ''
 
   return (
@@ -257,6 +270,44 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
             </div>
             <div className="spacer" />
             <Options options={ex.options} sel={sel} setSel={setSel} status={status} answer={ex.answer} />
+          </>
+        )}
+        {ex.kind === 'hear' && (
+          <>
+            <h3 className="ex-title">👂 {t.hearTitle}</h3>
+            <p className="muted small" style={{ margin: 0 }}>
+              {t.hearHint}
+            </p>
+            <SpeakButtons text={ex.tr} big />
+            {status !== 'idle' && (
+              <div className="card col" style={{ gap: 6 }}>
+                <span className="prompt small-prompt">{ex.tr}</span>
+                <FocusChips fresh={ex.fresh} review={ex.review} />
+              </div>
+            )}
+            <div className="spacer" />
+            <Options options={ex.options} sel={sel} setSel={setSel} status={status} answer={ex.answer} />
+          </>
+        )}
+        {ex.kind === 'dictate' && (
+          <>
+            <h3 className="ex-title">📝 {t.dictTitle}</h3>
+            <p className="muted small" style={{ margin: 0 }}>
+              {t.dictHint}
+            </p>
+            <SpeakButtons text={ex.tr} big />
+            <TypeAnswer value={typed} setValue={setTyped} locked={status !== 'idle'} onEnter={() => status === 'idle' && check()} />
+            {dict && (
+              <div className="dict-diff">
+                {dict.map((w, i) => (
+                  <span key={i} className={`dict-w ${w.state}`}>
+                    {w.word}
+                  </span>
+                ))}
+              </div>
+            )}
+            {status !== 'idle' && <span className="muted small">{ex.kk}</span>}
+            <div className="spacer" />
           </>
         )}
         {ex.kind === 'match' && (

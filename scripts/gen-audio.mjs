@@ -22,6 +22,7 @@ const { STORIES } = await load('/src/data/stories.ts')
 const { TIPS } = await load('/src/data/grammar.ts')
 const { DIALOGS, EPISODES, personalize } = await load('/src/data/dialogs.ts')
 const { audioKey } = await load('/src/lib/audioKey.ts')
+const { PHRASES } = await load('/src/data/phrases.ts')
 await server.close()
 
 const phrases = [
@@ -29,6 +30,7 @@ const phrases = [
   ...SENTENCE_BANK.map((s) => s.tr), // курс, мысалдар, байланыстырушы сөйлемдер, диалогтар, әңгімелер
   ...STORIES.flatMap((s) => s.lines.map((l) => l[0])),
   ...TIPS.flatMap((t) => t.examples.map((e) => e[0])),
+  ...PHRASES.flatMap((p) => [p.tr, ...p.ex.map((e) => e[0])]), // телехикая тіркестері
   'Merhaba! Birlikte Türkçe öğreniyoruz.',
 ]
 
@@ -50,9 +52,9 @@ const ttsText = (t) => (/[.!?…]$/.test(t) ? t : t[0].toLocaleUpperCase('tr') +
 
 async function synth(text, voice) {
   for (let attempt = 1; attempt <= 8; attempt++) {
-    const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${KEY}`, {
+    const res = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': KEY },
       body: JSON.stringify({ input: { text: ttsText(text) }, voice: { languageCode: 'tr-TR', name: voice }, audioConfig: { audioEncoding: 'MP3' } }),
     })
     const data = await res.json()

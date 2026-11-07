@@ -26,6 +26,9 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,woff2}'],
+        globIgnores: ['push-sw.js'],
+        // Хабарландыру өңдеушісі (public/push-sw.js)
+        importScripts: ['push-sw.js'],
         // Аудиофайлдар бірінші рет ойнатылғанда сақталып, кейін интернетсіз де ойнайды
         runtimeCaching: [
           {
