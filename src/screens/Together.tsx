@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CatIcon, Check, Flame, Lock, MessageCircle, Pause, Trophy, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { DEFAULT_NAMES, DIALOGS, EPISODES, LEVEL_NAMES, dialogById, isNamedRole, personalize, turnsOf, type Dialog, type Level } from '../data/dialogs'
 import { getSolo } from '../lib/dialogProgress'
@@ -103,8 +104,8 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
               >
                 {t.accept}
               </button>
-              <button className="btn small ghost" onClick={() => void removeFriend(f.friendshipId)}>
-                ✕
+              <button className="btn small ghost" onClick={() => void removeFriend(f.friendshipId)} aria-label="✕">
+                <X size={18} />
               </button>
             </div>
           ))}
@@ -133,7 +134,9 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
         if (!online.length && !solo.length) return null
         return (
           <section className="col">
-            <h3>⏸ {t.continueDialogs}</h3>
+            <h3 className="ih">
+            <Pause size={20} /> {t.continueDialogs}
+          </h3>
             {online.map((sess) => {
               const d = dialogById(sess.dialog_id)!
               const pid = sess.host === me.id ? sess.guest : sess.host
@@ -157,7 +160,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
                 <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start' }}>
                   <b>{d.title}</b>
                   <span className="muted small">
-                    🐱 {t.withCat} · {p!.step}/{d.lines.length}
+                    {t.withCat} · {p!.step}/{d.lines.length}
                   </span>
                 </span>
                 <span className="btn small ghost">{t.resume}</span>
@@ -187,7 +190,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
                   setPicking(d)
                 }}
               >
-                <span className="ep-num">{done ? '✓' : open ? d.icon : '🔒'}</span>
+                <span className="ep-num">{done ? <Check size={20} /> : open ? d.icon : <Lock size={18} />}</span>
                 <span className="col" style={{ gap: 0, alignItems: 'flex-start', flex: 1 }}>
                   <span className="muted tiny">{t.episode(d.series!.episode)}</span>
                   <b>{d.title}</b>
@@ -201,7 +204,9 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
 
       {/* Диалогтар */}
       <section className="col">
-        <h3>💬 {t.dialogs}</h3>
+        <h3 className="ih">
+          <MessageCircle size={20} /> {t.dialogs}
+        </h3>
         <p className="muted small" style={{ margin: 0 }}>
           {t.dialogsHint}
         </p>
@@ -235,11 +240,13 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
 
       {accepted.length > 0 && (
         <section className="col">
-          <h3>🏆 {t.leaderboard}</h3>
+          <h3 className="ih">
+            <Trophy size={20} /> {t.leaderboard}
+          </h3>
           <div className="card col" style={{ gap: 8 }}>
             {board.map((p, i) => (
               <div key={p.id} className="row">
-                <span className="rank">{['🥇', '🥈', '🥉'][i] ?? i + 1}</span>
+                <span className={`rank${i < 3 ? ` medal m${i + 1}` : ''}`}>{i + 1}</span>
                 <Cat look={p.cat} size={36} />
                 <span style={{ flex: 1 }} className="ellipsis">
                   {p.name}
@@ -266,12 +273,12 @@ function FriendCard({ f, myDays }: { f: Friend; myDays: Record<string, number> }
       <div className="col" style={{ gap: 3, flex: 1, minWidth: 0 }}>
         <b className="ellipsis">{f.profile.name}</b>
         <span className="muted small">
-          {t.level} {lvl.level} · 📚 {f.wordsLearned} {t.wordsShort}
+          {t.level} {lvl.level} · {f.wordsLearned} {t.wordsShort}
         </span>
         <span className={`small ${today ? 'ok-text' : 'muted'}`}>{today ? t.studiedToday : t.notStudiedToday}</span>
       </div>
       <div className="col center" style={{ gap: 0 }}>
-        <span className={`together-streak ${together > 0 ? 'on' : ''}`}>🔥 {together}</span>
+        <span className={`together-streak ${together > 0 ? 'on' : ''}`}><Flame size={16} off={together === 0} /> {together}</span>
         <span className="muted tiny">{t.togetherStreak}</span>
       </div>
       <button
@@ -344,7 +351,9 @@ function DialogSheet({
             onStart({ kind: 'solo', dialogId: dialog.id, role })
           }}
         >
-          <span style={{ fontSize: 32 }}>🐱</span>
+          <span className="choice-ico">
+            <CatIcon size={26} />
+          </span>
           <b style={{ flex: 1, textAlign: 'left' }}>{t.playSolo}</b>
           <span className="btn small ghost">▶</span>
         </button>

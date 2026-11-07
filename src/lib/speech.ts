@@ -8,8 +8,8 @@ import { audioKey } from './audioKey'
 
 const AUDIO_KEYS = new Set<string>(manifest.keys)
 export const CLOUD_VOICES = [
-  { id: 'g:female', dir: 'female', label: '👩 Әйел дауысы' },
-  { id: 'g:male', dir: 'male', label: '👨 Ер дауысы' },
+  { id: 'g:female', dir: 'female', label: 'Әйел дауысы' },
+  { id: 'g:male', dir: 'male', label: 'Ер дауысы' },
 ] as const
 const DEFAULT_VOICE = 'g:female'
 
@@ -88,7 +88,7 @@ export function onVoicesChanged(l: () => void) {
 
 export function voiceLabel(v: SpeechSynthesisVoice) {
   const q = quality(v)
-  return v.name + (q === 3 ? ' ⭐⭐' : q === 2 ? ' ⭐' : '')
+  return v.name + (q === 3 ? ' · Premium' : q === 2 ? ' · Enhanced' : '')
 }
 
 /** Дауыстың техникалық атауының қысқа түрі (мысалы, «enhanced.tr-TR.Yelda») */

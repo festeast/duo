@@ -1,4 +1,5 @@
 import { levelOf, streakOf, useStore } from '../lib/store'
+import { Coin, Flame } from './Icon'
 import { t } from '../i18n/kk'
 import { Cat } from './Cat'
 
@@ -26,9 +27,11 @@ export function Header({ onCat }: { onCat: () => void }) {
         </div>
       </div>
       <span className={`chip ${streak > 0 ? 'fire' : ''}`} title={t.streak}>
-        🔥 {streak}
+        <Flame size={20} off={streak === 0} /> {streak}
       </span>
-      <span className="chip coin">🪙 {me.coins}</span>
+      <span className="chip coin">
+        <Coin size={20} /> {me.coins}
+      </span>
     </header>
   )
 }

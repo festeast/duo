@@ -230,7 +230,7 @@ h3 { font-size: 19px; }
 }
 .tabbar button { flex: 1; border: 0; background: none; padding: 8px 0 10px; font-size: 12px; font-weight: 800; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .tabbar button.on { color: var(--blue); }
-.tabbar .ico { font-size: 24px; transition: transform 150ms; }
+.tabbar .ico { transition: transform 150ms; }
 .tabbar button.on .ico { transform: scale(1.15); }
 
 /* ---------- Басты бет ---------- */
@@ -509,3 +509,30 @@ h3 { font-size: 19px; }
 .phrase-line { display: flex; gap: 10px; align-items: flex-start; background: var(--card-2); border: 0; border-radius: 12px; padding: 8px 10px; cursor: pointer; font-weight: 700; }
 .phrase-line .who { font-size: 18px; line-height: 1.2; }
 .phrase-q { background: var(--bg-2); border: 0; border-radius: 14px; padding: 14px; font-size: 19px; font-weight: 800; text-align: left; cursor: pointer; }
+
+/* ---------- Иконки ---------- */
+.ih { display: inline-flex; align-items: center; gap: 8px; }
+h2.ih, h3.ih { display: flex; }
+.ih-accent { color: var(--blue); flex-shrink: 0; }
+.chip svg, .btn svg, .option svg, .link-btn svg { flex-shrink: 0; }
+.btn, .link-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.chip-word { display: inline-flex; align-items: center; gap: 5px; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; }
+.speak-btn { display: inline-flex; align-items: center; justify-content: center; }
+.mic-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.new-badge { display: inline-flex; align-items: center; gap: 4px; }
+.cognate-chip { display: inline-flex; vertical-align: -2px; }
+.result-ico { color: var(--yellow-dark); display: flex; }
+.choice-ico { width: 44px; height: 44px; border-radius: 14px; background: var(--blue-soft); color: var(--blue-dark); display: inline-flex; align-items: center; justify-content: center; }
+.vs { color: var(--muted); display: inline-flex; }
+.rank.medal { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; }
+.rank.m1 { background: linear-gradient(#ffd965, #e9a514); box-shadow: 0 2px 0 #b97e0b; }
+.rank.m2 { background: linear-gradient(#e4e8ee, #9aa4b2); box-shadow: 0 2px 0 #77808c; }
+.rank.m3 { background: linear-gradient(#f1b07a, #c27434); box-shadow: 0 2px 0 #95561f; }
+.phrase-line .who { width: 22px; height: 22px; border-radius: 50%; font-size: 12px; font-weight: 900; color: #fff; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.phrase-line .who.a { background: var(--blue); }
+.phrase-line .who.b { background: var(--purple); }
+.together-streak { display: inline-flex; align-items: center; gap: 4px; }
+.ep-num svg { display: block; }
+.speaker { vertical-align: -3px; color: var(--blue); }

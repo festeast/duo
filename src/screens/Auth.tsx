@@ -39,7 +39,7 @@ export function Auth({ onSignedUp }: { onSignedUp: () => void }) {
           <Cat look={{ fur: 'gray', eyes: 'blue', char: 'smart', ear: 'ear-ribbon', cheek: 'heart-paint' }} size={120} bounce flip />
         </div>
         <h1 className="logo">{t.appName}</h1>
-        <p className="muted">{t.tagline} 🇰🇿 → 🇹🇷</p>
+        <p className="muted">{t.tagline}</p>
       </div>
 
       <form className="card col" onSubmit={submit}>

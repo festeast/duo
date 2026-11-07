@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Clapperboard, Lightbulb, Target, Trophy, Volume2, X } from '../components/Icon'
 import { PHRASES } from '../data/phrases'
 import { t } from '../i18n/kk'
 import { addXp } from '../lib/api'
@@ -22,7 +23,7 @@ export function Phrases() {
         {t.phrasesHint}
       </p>
       <button className="btn blue wide" onClick={() => setQuiz(true)}>
-        🎯 {t.phrasesQuiz}
+        <Target size={20} /> {t.phrasesQuiz}
       </button>
       {PHRASES.map((p, i) => (
         <div key={p.tr} className={`card phrase${open === i ? ' open' : ''}`}>
@@ -43,11 +44,13 @@ export function Phrases() {
           </button>
           {open === i && (
             <div className="col pop" style={{ gap: 8 }}>
-              <span className="small phrase-note">💡 {p.note}</span>
+              <span className="small phrase-note ih" style={{ alignItems: 'flex-start' }}>
+                <Lightbulb size={16} style={{ flexShrink: 0, marginTop: 2 }} /> {p.note}
+              </span>
               <div className="col phrase-ex">
                 {p.ex.map(([tr, kk], j) => (
                   <button key={j} className="phrase-line" onClick={() => speak(tr)}>
-                    <span className="who">{j % 2 ? '🅑' : '🅐'}</span>
+                    <span className={`who ${j % 2 ? 'b' : 'a'}`}>{j % 2 ? 'B' : 'A'}</span>
                     <span className="col" style={{ gap: 1, alignItems: 'flex-start', textAlign: 'left' }}>
                       <span>{tr}</span>
                       <span className="muted small">{kk}</span>
@@ -56,7 +59,7 @@ export function Phrases() {
                 ))}
               </div>
               <button className="btn ghost small" onClick={() => speakAll(p.ex.map((e) => e[0]))}>
-                🔊 {t.listenAll}
+                <Volume2 size={18} /> {t.listenAll}
               </button>
             </div>
           )}
@@ -87,7 +90,7 @@ function PhraseQuiz({ onClose }: { onClose: () => void }) {
   if (over)
     return (
       <div className="card col center pop">
-        <span style={{ fontSize: 44 }}>{score === qs.length ? '🏆' : '🎬'}</span>
+        <span className="result-ico">{score === qs.length ? <Trophy size={44} /> : <Clapperboard size={44} />}</span>
         <h3 style={{ margin: 0 }}>{t.quizResult(score, qs.length)}</h3>
         <button className="btn wide" onClick={onClose}>
           {t.continue}
@@ -100,15 +103,15 @@ function PhraseQuiz({ onClose }: { onClose: () => void }) {
     <div className="card col pop" key={i}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <span className="muted small">
-          🎬 {i + 1}/{qs.length}
+          {i + 1}/{qs.length}
         </span>
-        <button className="link-btn" onClick={onClose}>
-          ✕
+        <button className="link-btn" onClick={onClose} aria-label="✕">
+          <X size={20} />
         </button>
       </div>
       <span className="muted small">{q.speak ? t.phrasesQMeaning : t.phrasesQWhich}</span>
       <button className="phrase-q" onClick={() => q.speak && speak(q.speak)}>
-        {q.prompt} {q.speak && '🔊'}
+        {q.prompt} {q.speak && <Volume2 size={18} style={{ verticalAlign: '-3px' }} />}
       </button>
       <div className="col" style={{ gap: 8 }}>
         {q.options.map((o) => {

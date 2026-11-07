@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Ear, PenLine, Repeat, Search, Sparkles, Speech, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { Feedback, Match, MicButton, Options, SpeakButtons, TileBuilder, TypeAnswer, WordCard, type Status } from '../components/Exercises'
 import { wordByTr } from '../data/words'
@@ -99,7 +100,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       return
     }
     if (ex.kind === 'choose' || ex.kind === 'listen') return sel !== null && normTr(sel) === normTr(ex.answer) ? succeed() : fail()
-    if (ex.kind === 'hear') return sel === ex.answer ? succeed(`🇹🇷 ${ex.tr}`) : fail()
+    if (ex.kind === 'hear') return sel === ex.answer ? succeed(ex.tr) : fail()
     if (ex.kind === 'dictate') {
       const r = checkDictation(typed, ex.answer)
       setDict(r.words)
@@ -144,7 +145,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       levelUp: levelOf(me.xp + xp).level > levelOf(me.xp).level,
       summary:
         t.sessionSummary(plan.fresh.length, plan.review.length) +
-        (plan.check.length ? ` · 🔍 ${plan.check.length - checkFailed.size}/${plan.check.length} ${t.checkKnown}` : ''),
+        (plan.check.length ? ` · ${plan.check.length - checkFailed.size}/${plan.check.length} ${t.checkKnown}` : ''),
     })
   }
 
@@ -172,7 +173,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     <div className="screen lesson">
       <div className="lesson-top">
         <button className="icon-btn" aria-label={t.quit} onClick={() => confirm(t.quitConfirm) && onExit()}>
-          ✕
+          <X size={26} />
         </button>
         <div className="bar">
           <i style={{ width: `${(solved / total) * 100}%` }} />
@@ -182,7 +183,9 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
       <div key={ex.key} className="col pop" style={{ flex: 1, gap: 18 }}>
         {ex.kind === 'check' && (
           <>
-            <h3 className="ex-title">🔍 {t.checkTitle}</h3>
+            <h3 className="ex-title ih">
+              <Search size={22} className="ih-accent" /> {t.checkTitle}
+            </h3>
             <p className="muted small" style={{ margin: 0 }}>
               {t.checkHint}
             </p>
@@ -202,7 +205,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
                   setStatus('no')
                 }}
               >
-                🤷 {t.dontKnow}
+                {t.dontKnow}
               </button>
             )}
           </>
@@ -237,7 +240,9 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
         )}
         {ex.kind === 'type' && (
           <>
-            <h3 className="ex-title">✍️ {t.typeTitle}</h3>
+            <h3 className="ex-title ih">
+              <PenLine size={22} className="ih-accent" /> {t.typeTitle}
+            </h3>
             <div className="card row">
               {ex.word.emoji && <span style={{ fontSize: 34 }}>{ex.word.emoji}</span>}
               <span className="prompt">{ex.prompt}</span>
@@ -274,7 +279,9 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
         )}
         {ex.kind === 'hear' && (
           <>
-            <h3 className="ex-title">👂 {t.hearTitle}</h3>
+            <h3 className="ex-title ih">
+              <Ear size={22} className="ih-accent" /> {t.hearTitle}
+            </h3>
             <p className="muted small" style={{ margin: 0 }}>
               {t.hearHint}
             </p>
@@ -291,7 +298,9 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
         )}
         {ex.kind === 'dictate' && (
           <>
-            <h3 className="ex-title">📝 {t.dictTitle}</h3>
+            <h3 className="ex-title ih">
+              <PenLine size={22} className="ih-accent" /> {t.dictTitle}
+            </h3>
             <p className="muted small" style={{ margin: 0 }}>
               {t.dictHint}
             </p>
@@ -327,7 +336,9 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
         )}
         {ex.kind === 'shadow' && (
           <>
-            <h3 className="ex-title">🗣️ {t.shadowTitle}</h3>
+            <h3 className="ex-title ih">
+              <Speech size={22} className="ih-accent" /> {t.shadowTitle}
+            </h3>
             <p className="muted small" style={{ margin: 0 }}>
               {t.shadowHint}
             </p>
@@ -376,12 +387,12 @@ function FocusChips({ fresh, review }: { fresh: string[]; review: string[] }) {
     <div className="chips">
       {fresh.map((tr) => (
         <span key={tr} className="chip-word fresh">
-          ✨ {tr} — {wordByTr(tr)?.kk}
+          <Sparkles size={13} /> {tr} — {wordByTr(tr)?.kk}
         </span>
       ))}
       {review.map((tr) => (
         <span key={tr} className="chip-word review">
-          🔁 {tr} — {wordByTr(tr)?.kk}
+          <Repeat size={13} /> {tr} — {wordByTr(tr)?.kk}
         </span>
       ))}
     </div>

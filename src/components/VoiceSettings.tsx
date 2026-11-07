@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Speech } from './Icon'
 import { t } from '../i18n/kk'
 import {
   CLOUD_VOICES,
@@ -35,7 +36,9 @@ export function VoiceSettings() {
   return (
     <div className="card col">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h3>🗣️ {t.voiceTitle}</h3>
+        <h3 className="ih">
+          <Speech size={22} /> {t.voiceTitle}
+        </h3>
         <button className="btn small blue" onClick={() => speak(SAMPLE)}>
           ▶ {t.voiceTest}
         </button>

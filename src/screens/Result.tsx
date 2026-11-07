@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Coin, PartyPopper } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
@@ -48,7 +49,9 @@ export function Result({ r, onDone }: { r: LessonResult; onDone: () => void }) {
           <b className="xp-text">+{r.xp}</b>
         </div>
         <div className="stat">
-          <span className="muted small">🪙 {t.coins}</span>
+          <span className="muted small ih">
+            <Coin size={16} /> {t.coins}
+          </span>
           <b className="coin-text">+{r.coins}</b>
         </div>
         <div className="stat">
@@ -59,7 +62,9 @@ export function Result({ r, onDone }: { r: LessonResult; onDone: () => void }) {
 
       {r.levelUp && (
         <div className="card level-up pop">
-          <h3>🎉 {t.levelUp}</h3>
+          <h3 className="ih">
+            <PartyPopper size={22} /> {t.levelUp}
+          </h3>
           <span>
             {t.level} {lvl.level}: {lvl.name}
           </span>

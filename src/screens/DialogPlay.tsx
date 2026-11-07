@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Coin, MessageCircle, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { Feedback, MicButton, Options, TileBuilder, type Status } from '../components/Exercises'
 import { DEFAULT_NAMES, dialogById, isNamedRole, personalize, type Dialog, type Line } from '../data/dialogs'
@@ -207,7 +208,7 @@ function DialogView({
             if (status !== 'active' || step === 0 || confirm(t.pauseConfirm)) onQuit()
           }}
         >
-          ✕
+          <X size={26} />
         </button>
         <div className="bar">
           <i style={{ width: `${(step / lines.length) * 100}%` }} />
@@ -223,7 +224,9 @@ function DialogView({
           <b>{people.A.name}</b>
           {!isNamedRole(dialogById(dialog.id)!.roles.A) && <span className="muted tiny">{dialog.roles.A}</span>}
         </div>
-        <span className="vs">💬</span>
+        <span className="vs">
+          <MessageCircle size={26} />
+        </span>
         <div className="cast-person">
           <Cat look={people.B.cat} size={64} flip mood={line?.role === 'B' && status === 'active' ? 'happy' : 'normal'} />
           <b>{people.B.name}</b>
@@ -285,7 +288,7 @@ function DialogView({
             <div className="col" style={{ gap: 2 }}>
               <h3>{t.dialogComplete}</h3>
               <span>
-                +{result.xp} XP · 🪙 +{result.coins}
+                +{result.xp} XP · <Coin size={16} /> +{result.coins}
               </span>
             </div>
           </div>

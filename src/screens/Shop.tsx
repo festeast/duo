@@ -1,4 +1,5 @@
 import { Cat } from '../components/Cat'
+import { Coin } from '../components/Icon'
 import { ITEMS } from '../data/cat'
 import { t } from '../i18n/kk'
 import { buyItem, saveProfile } from '../lib/api'
@@ -20,7 +21,9 @@ export function Shop() {
       <h2>{t.shopTitle}</h2>
       <div className="cat-stage">
         <Cat look={me.cat} size={150} bounce />
-        <span className="chip coin big">🪙 {me.coins}</span>
+        <span className="chip coin big">
+          <Coin size={24} /> {me.coins}
+        </span>
       </div>
 
       <div className="shop-grid">
@@ -47,7 +50,7 @@ export function Shop() {
                     }
                   }}
                 >
-                  🪙 {item.price}
+                  <Coin size={18} /> {item.price}
                 </button>
               )}
             </div>

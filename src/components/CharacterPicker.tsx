@@ -1,4 +1,5 @@
 import { CHARACTERS, charOwnedId } from '../data/characters'
+import { Coin, Drama } from './Icon'
 import { t } from '../i18n/kk'
 import { buyItem, saveProfile } from '../lib/api'
 import { sfx } from '../lib/sound'
@@ -19,8 +20,12 @@ export function CharacterPicker() {
   return (
     <section className="card col">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <h3>🎭 {t.charsTitle}</h3>
-        <span className="chip coin">🪙 {me.coins}</span>
+        <h3 className="ih">
+          <Drama size={22} /> {t.charsTitle}
+        </h3>
+        <span className="chip coin">
+          <Coin /> {me.coins}
+        </span>
       </div>
       <p className="muted small" style={{ margin: 0 }}>
         {t.charsHint}
@@ -46,7 +51,11 @@ export function CharacterPicker() {
               <b>{c.name}</b>
               <span className="muted tiny">{c.desc}</span>
               <span className={`char-price${owned ? ' owned' : ''}`}>
-                {selected ? t.charSelected : owned ? t.charChoose : `🪙 ${c.price}`}
+                {selected ? t.charSelected : owned ? t.charChoose : (
+                  <>
+                    <Coin size={16} /> {c.price}
+                  </>
+                )}
               </span>
             </button>
           )

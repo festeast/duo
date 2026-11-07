@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { PenLine, Target, Volume2, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { BANDS, type Word } from '../data/words'
 import { t } from '../i18n/kk'
@@ -129,7 +130,7 @@ export function Placement({ onDone }: { onDone: () => void }) {
     <div className="screen">
       <div className="lesson-top">
         <button className="icon-btn" aria-label={t.cancel} onClick={onDone}>
-          ✕
+          <X size={26} />
         </button>
         <div className="bar xp">
           <i style={{ width: `${Math.min(100, (asked / 24) * 100)}%` }} />
@@ -137,7 +138,9 @@ export function Placement({ onDone }: { onDone: () => void }) {
         <span className="level-tag l2">{BANDS[band].id}</span>
       </div>
 
-      <h3 className="ex-title">🎯 {t.placeTitle}</h3>
+      <h3 className="ex-title ih">
+        <Target size={24} className="ih-accent" /> {t.placeTitle}
+      </h3>
       <p className="muted small" style={{ margin: 0 }}>
         {t.placeHint}
       </p>
@@ -147,14 +150,16 @@ export function Placement({ onDone }: { onDone: () => void }) {
           <span className="prompt">{q.dir === 'tr-kk' ? q.word.tr : q.word.kk}</span>
           {q.dir === 'tr-kk' && (
             <button className="speak-btn" onClick={() => speak(q.word.tr)} aria-label={t.tapToListen}>
-              🔊
+              <Volume2 size={22} />
             </button>
           )}
         </div>
         <div className="spacer" />
         {q.dir === 'type' && (
           <>
-            <span className="muted small">✍️ {t.typeTitle}</span>
+            <span className="muted small ih">
+              <PenLine size={16} /> {t.typeTitle}
+            </span>
             <TypeAnswer value={typed} setValue={setTyped} locked={!!flash} onEnter={() => answer(typed)} />
             {flash && <span className="muted">{t.correctAnswer} <b>{q.answer}</b></span>}
             <button className="btn wide" disabled={!typed.trim() || !!flash} onClick={() => answer(typed)}>
@@ -173,7 +178,7 @@ export function Placement({ onDone }: { onDone: () => void }) {
             </button>
           ))}
           <button className="option dont-know" onClick={() => answer(null)}>
-            🤷 {t.dontKnow}
+            {t.dontKnow}
           </button>
         </div>
       </div>

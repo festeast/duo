@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Bell, Check } from './Icon'
 import { t } from '../i18n/kk'
 import { disablePush, enablePush, pushState, testPush, type PushState } from '../lib/push'
 import { sfx } from '../lib/sound'
@@ -29,16 +30,22 @@ export function Reminders() {
   return (
     <div className="card col">
       <div className="row" style={{ justifyContent: 'space-between' }}>
-        <span className="muted small">🔔 {t.remindTitle}</span>
-        {state === 'on' && <span className="ok-text small">✓ {t.on}</span>}
+        <span className="muted small ih">
+          <Bell size={16} /> {t.remindTitle}
+        </span>
+        {state === 'on' && (
+          <span className="ok-text small ih">
+            <Check size={16} /> {t.on}
+          </span>
+        )}
       </div>
       <span className="small">{t.remindHint}</span>
-      {state === 'needs-install' && <span className="small muted">📲 {t.remindInstall}</span>}
+      {state === 'needs-install' && <span className="small muted">{t.remindInstall}</span>}
       {state === 'unsupported' && <span className="small muted">{t.remindUnsupported}</span>}
       {state === 'denied' && <span className="small muted">{t.remindDenied}</span>}
       {state === 'off' && (
         <button className="btn blue wide" disabled={busy} onClick={() => run(() => enablePush(me.id))}>
-          🔔 {t.remindOn}
+          <Bell size={18} /> {t.remindOn}
         </button>
       )}
       {state === 'on' && (
@@ -70,7 +77,7 @@ export function Reminders() {
           </button>
         </div>
       )}
-      {diag && <span className="tiny muted" style={{ wordBreak: 'break-all' }}>⚙️ {diag}</span>}
+      {diag && <span className="tiny muted" style={{ wordBreak: 'break-all' }}>{diag}</span>}
     </div>
   )
 }

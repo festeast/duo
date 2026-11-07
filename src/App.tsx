@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { BookOpen, CalendarDays, HeartHandshake, ShoppingBag, User } from './components/Icon'
 import { Header } from './components/Header'
 import { InviteBanner } from './components/InviteBanner'
 import { t } from './i18n/kk'
@@ -29,12 +30,12 @@ type Screen =
   | { name: 'dialog'; start: DialogStart }
   | { name: 'result'; r: LessonResult; back: Tab }
 
-const TABS: [Tab, string, string][] = [
-  ['learn', '📅', t.tabLearn],
-  ['read', '📖', t.tabRead],
-  ['together', '💞', t.tabTogether],
-  ['shop', '🛍️', t.tabShop],
-  ['me', '🐱', t.tabProfile],
+const TABS: [Tab, typeof CalendarDays, string][] = [
+  ['learn', CalendarDays, t.tabLearn],
+  ['read', BookOpen, t.tabRead],
+  ['together', HeartHandshake, t.tabTogether],
+  ['shop', ShoppingBag, t.tabShop],
+  ['me', User, t.tabProfile],
 ]
 
 export default function App() {
@@ -113,7 +114,7 @@ export default function App() {
             {screen.tab === 'shop' && <Shop />}
             {screen.tab === 'me' && <Profile onEdit={() => go({ name: 'setup' })} onPlacement={() => go({ name: 'placement' })} />}
             <nav className="tabbar">
-              {TABS.map(([id, ico, label]) => (
+              {TABS.map(([id, Ico, label]) => (
                 <button
                   key={id}
                   className={screen.tab === id ? 'on' : ''}
@@ -122,7 +123,7 @@ export default function App() {
                     main(id)
                   }}
                 >
-                  <span className="ico">{ico}</span>
+                  <Ico className="ico" size={26} strokeWidth={screen.tab === id ? 2.4 : 1.8} />
                   {label}
                 </button>
               ))}

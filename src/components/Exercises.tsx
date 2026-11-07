@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { Link2, Mic, Snail, Sparkles, TriangleAlert, Volume2 } from './Icon'
 import type { Pair } from '../data/course'
 import type { Word } from '../data/words'
 import { t } from '../i18n/kk'
@@ -16,11 +17,11 @@ export function SpeakButtons({ text, big }: { text: string; big?: boolean }) {
   return (
     <div className="row" style={{ justifyContent: 'center', gap: 10 }}>
       <button className={`speak-btn${big ? ' big' : ''}`} aria-label={t.tapToListen} onClick={() => speak(text)}>
-        🔊
+        <Volume2 size={big ? 40 : 22} />
       </button>
       {big && (
         <button className="speak-btn slow" aria-label={t.slow} onClick={() => speak(text, true)}>
-          🐢
+          <Snail size={24} />
         </button>
       )}
     </div>
@@ -312,10 +313,10 @@ export function MicButton({ target, onResult, label = t.micSay }: { target: stri
   return (
     <div className="mic-wrap">
       <button className={`mic-btn ${state}`} onClick={go} disabled={state === 'listening'}>
-        <span className="mic-ico">🎤</span>
+        <Mic className="mic-ico" size={22} />
         {state === 'listening' ? t.micListening : label}
       </button>
-      {state === 'ok' && <span className="ok-text small">✓ {t.micHeard}: «{heard}»</span>}
+      {state === 'ok' && <span className="ok-text small">{t.micHeard}: «{heard}»</span>}
       {state === 'no' && <span className="error small">{heard ? `${t.micHeard}: «${heard}» — ${t.micTryAgain}` : t.micNothing}</span>}
       {state === 'error' && <span className="error small">{t.micError}</span>}
       {state === 'denied' && <span className="error small">{t.micDenied}</span>}
@@ -329,10 +330,12 @@ export function WordCard({ w }: { w: Word }) {
   const ex = useMemo(() => exampleFor(w), [w])
   return (
     <div className="word-card pop">
-      <span className="new-badge">✨ {t.newWord}</span>
+      <span className="new-badge">
+          <Sparkles size={14} /> {t.newWord}
+        </span>
       {w.emoji && <span className="word-emoji">{w.emoji}</span>}
       <button className="word-tr" onClick={() => speak(w.tr)}>
-        {w.tr} <span className="speaker">🔊</span>
+        {w.tr} <Volume2 className="speaker" size={24} />
       </button>
       <span className="word-kk">{w.kk}</span>
       {w.cognate && <CognateBadge c={w.cognate} />}
@@ -347,10 +350,13 @@ export function WordCard({ w }: { w: Word }) {
 }
 
 export function CognateBadge({ c, compact }: { c: NonNullable<Word['cognate']>; compact?: boolean }) {
-  if (compact) return <span className={`cognate-chip ${c.kind}`} title={c.note}>{c.kind === 'same' ? '🔗' : '⚠️'}</span>
+  if (compact) return <span className={`cognate-chip ${c.kind}`} title={c.note}>{c.kind === 'same' ? <Link2 size={14} /> : <TriangleAlert size={14} />}</span>
   return (
     <div className={`cognate ${c.kind}`}>
-      <b>{c.kind === 'same' ? `🔗 ${t.cognateSame}: ${c.kk}` : `⚠️ ${t.cognateFalse}: ${c.kk}`}</b>
+      <b className="ih">
+          {c.kind === 'same' ? <Link2 size={16} /> : <TriangleAlert size={16} />}
+          {c.kind === 'same' ? `${t.cognateSame}: ${c.kk}` : `${t.cognateFalse}: ${c.kk}`}
+        </b>
       {c.note && <span>{c.note}</span>}
     </div>
   )

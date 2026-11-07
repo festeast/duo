@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { CheckCircle2, Lightbulb, Repeat, Sparkles, Target } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { CognateBadge } from '../components/Exercises'
 import { tipOfDay } from '../data/grammar'
@@ -65,7 +66,9 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
 
       {wordsLoaded && learned.length === 0 && !skipTest && !hasPlaced(uid) && (
         <section className="card place-card pop">
-          <h2>🎯 {t.placeAskTitle}</h2>
+          <h2 className="ih">
+            <Target size={26} className="ih-accent" /> {t.placeAskTitle}
+          </h2>
           <p className="muted" style={{ margin: 0 }}>
             {t.placeAskText}
           </p>
@@ -92,7 +95,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
       <section className="today card">
         <div className="row" style={{ alignItems: 'flex-start' }}>
           <div className="col" style={{ gap: 4, flex: 1 }}>
-            <h2>📅 {t.todayTitle}</h2>
+            <h2>{t.todayTitle}</h2>
             <span className="muted small">
               {finished ? t.todayAllDone : t.todayCounts(plan.fresh.length, plan.review.length)}
               {!finished && plan.check.length > 0 && ` · ${t.checksToday(plan.check.length)}`}
@@ -115,12 +118,12 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
             <div className="chips">
               {plan.review.map((w) => (
                 <span key={w.tr} className="chip-word review">
-                  🔁 {w.tr}
+                  <Repeat size={13} /> {w.tr}
                 </span>
               ))}
               {plan.fresh.map((w) => (
                 <span key={w.tr} className="chip-word fresh">
-                  ✨ {w.emoji ? `${w.emoji} ` : ''}
+                  <Sparkles size={13} /> {w.emoji ? `${w.emoji} ` : ''}
                   {w.tr}
                 </span>
               ))}
@@ -139,22 +142,26 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
 
         {finished && (
           <>
-            <p className="done-text">✅ {t.todayDoneText}</p>
+            <p className="done-text ih">
+              <CheckCircle2 size={22} /> {t.todayDoneText}
+            </p>
             {tomorrow > 0 && <span className="muted small">{t.tomorrowReview(tomorrow)}</span>}
             {plan.dueTotal === 0 && WORD_LIST.some((w) => !words[w.tr]) && (
               <button className="btn ghost wide" onClick={moreWords}>
-                ✨ {t.moreWords}
+                <Sparkles size={18} /> {t.moreWords}
               </button>
             )}
           </>
         )}
       </section>
 
-      {plan.unverified > 0 && <p className="muted small center" style={{ margin: 0 }}>🔍 {t.unverifiedLeft(plan.unverified)}</p>}
+      {plan.unverified > 0 && <p className="muted small center" style={{ margin: 0 }}>{t.unverifiedLeft(plan.unverified)}</p>}
 
       {/* ---------- Бүгінгі кеңес ---------- */}
       <section className="card tip">
-        <span className="muted small">💡 {t.tipTitle}</span>
+        <span className="muted small ih">
+          <Lightbulb size={16} /> {t.tipTitle}
+        </span>
         <h3>{tip.title}</h3>
         <p>{tip.text}</p>
         <div className="tip-examples">
@@ -170,7 +177,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
       {/* ---------- Үйренген сөздер ---------- */}
       <section className="col">
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <h3>📚 {t.learnedWords}</h3>
+          <h3>{t.learnedWords}</h3>
           <span className="muted small">
             {learned.length}/{WORD_LIST.length}
           </span>
@@ -194,7 +201,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
                       <i key={i} className={i < st.stage ? 'on' : ''} />
                     ))}
                   </span>
-                  <span className={`due ${st.due_on <= dayKey() ? 'now' : ''}`}>🔁 {dueLabel(st.due_on)}</span>
+                  <span className={`due ${st.due_on <= dayKey() ? 'now' : ''}`}>{dueLabel(st.due_on)}</span>
                 </span>
               </button>
             )

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BookOpen, CheckCircle2, CircleHelp, Clapperboard, Trophy, Medal, BookMarked, Volume2 } from '../components/Icon'
 import { Phrases } from "./Phrases";
 import {
   COMMON_GLOSS,
@@ -64,19 +65,19 @@ export function Stories({ onOpen }: { onOpen: (id: string) => void }) {
   };
   return (
     <div className="screen">
-      <h2>📖 {t.storiesTitle}</h2>
+      <h2>{t.storiesTitle}</h2>
       <div className="seg">
         <button
           className={tab === "stories" ? "on" : ""}
           onClick={() => pick("stories")}
         >
-          📖 {t.tabStories}
+          <BookOpen size={18} /> {t.tabStories}
         </button>
         <button
           className={tab === "phrases" ? "on" : ""}
           onClick={() => pick("phrases")}
         >
-          🎬 {t.tabPhrases}
+          <Clapperboard size={18} /> {t.tabPhrases}
         </button>
       </div>
       {tab === "phrases" ? (
@@ -106,7 +107,7 @@ export function Stories({ onOpen }: { onOpen: (id: string) => void }) {
                     {LEVELS[s.level]} · {s.lines.length} {t.sentences}
                   </span>
                 </span>
-                {log[s.id] && <span className="ok-text">✓</span>}
+                {log[s.id] && <CheckCircle2 className="ok-text" size={22} />}
               </button>
             ))}
           </div>
@@ -159,10 +160,10 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
           className={!showKk ? "on" : ""}
           onClick={() => setShowKk(false)}
         >
-          🇹🇷 {t.onlyTurkish}
+          {t.onlyTurkish}
         </button>
         <button className={showKk ? "on" : ""} onClick={() => setShowKk(true)}>
-          🇰🇿 {t.withTranslation}
+          {t.withTranslation}
         </button>
       </div>
       <p className="muted small" style={{ margin: 0 }}>
@@ -177,7 +178,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
               onClick={() => speak(tr)}
               aria-label={t.tapToListen}
             >
-              🔊
+              <Volume2 size={18} />
             </button>
             <div className="col" style={{ gap: 2 }}>
               <p className="tr-line">
@@ -218,7 +219,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
         className="btn blue wide"
         onClick={() => speakAll(story.lines.map((l) => l[0]))}
       >
-        🔊 {t.listenAll}
+        <Volume2 size={20} /> {t.listenAll}
       </button>
       {quizOn && quiz ? (
         <StoryQuiz
@@ -230,10 +231,12 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
         />
       ) : finished ? (
         <>
-          <p className="center ok-text">✓ {t.storyDone}</p>
+          <p className="center ok-text ih" style={{ justifyContent: 'center' }}>
+            <CheckCircle2 size={20} /> {t.storyDone}
+          </p>
           {quiz && (
             <button className="btn ghost wide" onClick={() => setQuizOn(true)}>
-              ❓ {t.quizAgain}
+              <CircleHelp size={18} /> {t.quizAgain}
             </button>
           )}
         </>
@@ -246,7 +249,13 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
             else finish();
           }}
         >
-          {quiz ? `❓ ${t.quizStart}` : t.storyFinish}
+          {quiz ? (
+            <>
+              <CircleHelp size={18} /> {t.quizStart}
+            </>
+          ) : (
+            t.storyFinish
+          )}
         </button>
       )}
     </div>
@@ -278,12 +287,8 @@ function StoryQuiz({
   if (over)
     return (
       <div className="card col center story-quiz pop">
-        <span style={{ fontSize: 44 }}>
-          {score === questions.length
-            ? "🏆"
-            : score >= questions.length / 2
-              ? "👏"
-              : "📚"}
+        <span className="result-ico">
+          {score === questions.length ? <Trophy size={44} /> : score >= questions.length / 2 ? <Medal size={44} /> : <BookMarked size={44} />}
         </span>
         <h3 style={{ margin: 0 }}>{t.quizResult(score, questions.length)}</h3>
         <button className="btn wide" onClick={() => onDone(score)}>
@@ -295,7 +300,7 @@ function StoryQuiz({
   return (
     <div className="card col story-quiz pop" key={i}>
       <span className="muted small">
-        ❓ {t.quizTitle} · {i + 1}/{questions.length}
+        <CircleHelp size={14} /> {t.quizTitle} · {i + 1}/{questions.length}
       </span>
       <b style={{ fontSize: 19 }}>{q.q}</b>
       <div className="col" style={{ gap: 8 }}>

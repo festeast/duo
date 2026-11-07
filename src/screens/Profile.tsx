@@ -1,4 +1,5 @@
 import { Cat } from '../components/Cat'
+import { Gift, Moon, PenLine, Target, Trash2, Volume2, VolumeX } from '../components/Icon'
 import { VoiceSettings } from '../components/VoiceSettings'
 import { CharacterPicker } from '../components/CharacterPicker'
 import { Reminders } from '../components/Reminders'
@@ -50,7 +51,7 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           <b>{learned}</b>
         </div>
         <div className="stat">
-          <span className="muted small">🔥 {t.bestStreak}</span>
+          <span className="muted small">{t.bestStreak}</span>
           <b className="fire-text">{streakOf(days)}</b>
         </div>
       </div>
@@ -84,7 +85,7 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           ))}
         </div>
         <button className="link-btn" onClick={onPlacement}>
-          🎯 {t.placeRetake}
+          <Target size={18} /> {t.placeRetake}
         </button>
         {unverified > 0 && (
           <button
@@ -95,7 +96,7 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
               toast(t.placeResetDone(n))
             }}
           >
-            🗑️ {t.placeReset} ({unverified})
+            <Trash2 size={18} /> {t.placeReset} ({unverified})
           </button>
         )}
       </div>
@@ -115,7 +116,9 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           }
         }}
       >
-        <span className="muted small">🎁 {t.promoTitle}</span>
+        <span className="muted small ih">
+          <Gift size={16} /> {t.promoTitle}
+        </span>
         <div className="row">
           <input
             className="input"
@@ -134,7 +137,7 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
       </form>
 
       <button className="btn blue wide" onClick={onEdit}>
-        🎨 {t.editCat}
+        <PenLine size={20} /> {t.editCat}
       </button>
       <button
         className="btn ghost wide"
@@ -143,11 +146,13 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           sfx.click()
         }}
       >
-        {sound ? '🔊' : '🔇'} {t.sound}: {sound ? t.on : t.off}
+        {sound ? <Volume2 size={20} /> : <VolumeX size={20} />} {t.sound}: {sound ? t.on : t.off}
       </button>
       <Reminders />
       <div className="card col">
-        <span className="muted small">🌙 {t.theme}</span>
+        <span className="muted small ih">
+          <Moon size={16} /> {t.theme}
+        </span>
         <div className="seg three">
           {(['auto', 'light', 'dark'] as Theme[]).map((v) => (
             <button
