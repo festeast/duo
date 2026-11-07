@@ -12,6 +12,16 @@ export const VAPID_PUBLIC_KEY = 'BCtcy6AZ_vET-6rpAnidzLBwIaRHlBeslZIvPWtbfuvgQJO
 export function admin() {
   const key = process.env.SUPABASE_SECRET_KEY
   if (!key) throw new Error('SUPABASE_SECRET_KEY жоқ')
+  // Жиі қате: құпия кілттің орнына жария (publishable/anon) кілт қойылады — сонда база бос болып көрінеді
+  if (key.startsWith('sb_publishable')) throw new Error('SUPABASE_SECRET_KEY орнына publishable кілт қойылған — sb_secret_... кілті керек')
+  if (key.startsWith('eyJ')) {
+    try {
+      const role = JSON.parse(Buffer.from(key.split('.')[1], 'base64url').toString()).role
+      if (role !== 'service_role') throw new Error(`SUPABASE_SECRET_KEY: бұл «${role}» кілті — service_role немесе sb_secret_... кілті керек`)
+    } catch (e) {
+      if (String(e.message).startsWith('SUPABASE')) throw e
+    }
+  }
   return createClient(process.env.SUPABASE_URL || SUPABASE_URL, key, { auth: { persistSession: false } })
 }
 
