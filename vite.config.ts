@@ -25,7 +25,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,png,woff2,webp}'],
+        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+        // Суреттер ?v=... белгісімен сұралады — кэштегі нұсқамен сәйкестендіру үшін ескермейміз
+        ignoreURLParametersMatching: [/^v$/, /^utm_/],
         globIgnores: ['push-sw.js'],
         // Хабарландыру өңдеушісі (public/push-sw.js)
         importScripts: ['push-sw.js'],
@@ -34,7 +37,9 @@ export default defineConfig({
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/audio/'),
             handler: 'CacheFirst',
-            options: { cacheName: 'duo-audio', expiration: { maxEntries: 2000 } },
+            // Аудио «Интернетсіз оқу» арқылы алдын ала жүктеледі (шектеусіз).
+            // rangeRequests — iPhone аудионы бөліктеп сұрайды, кэштен де солай береміз
+            options: { cacheName: 'duo-audio', rangeRequests: true, cacheableResponse: { statuses: [200] } },
           },
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/sprites/'),

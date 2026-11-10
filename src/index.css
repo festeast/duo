@@ -551,3 +551,9 @@ h2.ih, h3.ih { display: flex; }
 .phrase-mark { background: #ffe58a; color: inherit; border-radius: 4px; padding: 0 2px; }
 :root[data-theme='dark'] .phrase-mark { background: #7a5d00; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .phrase-mark { background: #7a5d00; } }
+
+/* Офлайн */
+.offline-chip { color: var(--muted); background: var(--card-2); border-radius: 99px; padding: 3px 9px; font-size: 13px; }
+.offline-label { font-weight: 800; }
+.offline-note { background: var(--bg-2); color: var(--muted); align-items: flex-start; }
+.header .muted { white-space: nowrap; }

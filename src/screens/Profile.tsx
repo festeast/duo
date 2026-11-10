@@ -3,6 +3,7 @@ import { Gift, Moon, PenLine, Target, Trash2, Volume2, VolumeX } from '../compon
 import { VoiceSettings } from '../components/VoiceSettings'
 import { CharacterPicker } from '../components/CharacterPicker'
 import { Reminders } from '../components/Reminders'
+import { OfflinePack } from '../components/OfflinePack'
 import { BANDS } from '../data/words'
 import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
 import { useState } from 'react'
@@ -149,6 +150,7 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
         {sound ? <Volume2 size={20} /> : <VolumeX size={20} />} {t.sound}: {sound ? t.on : t.off}
       </button>
       <Reminders />
+      <OfflinePack />
       <div className="card col">
         <span className="muted small ih">
           <Moon size={16} /> {t.theme}

@@ -1,11 +1,13 @@
 import { levelOf, streakOf, useStore } from '../lib/store'
-import { Coin, Flame } from './Icon'
+import { CloudUpload, Coin, Flame, WifiOff } from './Icon'
 import { t } from '../i18n/kk'
 import { Cat } from './Cat'
 
 export function Header({ onCat }: { onCat: () => void }) {
   const me = useStore((s) => s.profile)
   const days = useStore((s) => s.days)
+  const online = useStore((s) => s.online)
+  const pending = useStore((s) => s.pending)
   if (!me) return null
   const lvl = levelOf(me.xp)
   const streak = streakOf(days)
@@ -26,6 +28,11 @@ export function Header({ onCat }: { onCat: () => void }) {
           <i style={{ width: `${lvl.progress * 100}%` }} />
         </div>
       </div>
+      {(!online || pending > 0) && (
+        <span className="chip offline-chip" title={pending ? t.offlineSaved(pending) : t.offline}>
+          {online ? <CloudUpload size={18} /> : <WifiOff size={18} />}
+        </span>
+      )}
       <span className={`chip ${streak > 0 ? 'fire' : ''}`} title={t.streak}>
         <Flame size={20} off={streak === 0} /> {streak}
       </span>

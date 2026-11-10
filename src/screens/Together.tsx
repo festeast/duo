@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CatIcon, Check, Flame, Lock, MessageCircle, Pause, Trophy, X } from '../components/Icon'
+import { WifiOff, CatIcon, Check, Flame, Lock, MessageCircle, Pause, Trophy, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { DEFAULT_NAMES, DIALOGS, EPISODES, LEVEL_NAMES, dialogById, isNamedRole, personalize, turnsOf, type Dialog, type Level } from '../data/dialogs'
 import { getSolo } from '../lib/dialogProgress'
@@ -16,6 +16,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
   const friends = useStore((s) => s.friends)
   const activeDialogs = useStore((s) => s.activeDialogs)
   const progress = useStore((s) => s.progress)
+  const online = useStore((s) => s.online)
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [picking, setPicking] = useState<Dialog | null>(null)
@@ -46,6 +47,11 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
 
   return (
     <div className="screen">
+      {!online && (
+        <div className="card offline-note ih">
+          <WifiOff size={18} style={{ flexShrink: 0 }} /> <span className="small">{t.offlineTogether}</span>
+        </div>
+      )}
       <h2>{t.togetherTitle}</h2>
 
       {/* Достық код */}

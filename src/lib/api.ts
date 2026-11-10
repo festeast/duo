@@ -4,6 +4,19 @@ import { dayKey, daysAgo, getState, setState, toast, type Friend } from './store
 import type { CatLook, DialogSession, Profile } from './types'
 import type { WordState } from './srs'
 import { t } from '../i18n/kk'
+import {
+  LAST_UID,
+  flushOutbox,
+  isNetError,
+  loadSnapshot,
+  pendingWords,
+  queueRpc,
+  queueWords,
+  refreshPending,
+  startSnapshotting,
+  watchOnline,
+  type Rpc,
+} from './offline'
 
 // ---------- Кіру / тіркелу ----------
 
@@ -21,6 +34,11 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signOut() {
+  try {
+    localStorage.removeItem(LAST_UID)
+  } catch {
+    /* бос */
+  }
   await supabase.auth.signOut()
 }
 
@@ -44,13 +62,24 @@ export async function loadMe() {
     supabase.from('activity').select('day, xp').eq('user_id', uid).gte('day', daysAgo(400)),
     supabase.from('word_progress').select('word, stage, due_on, first_seen, last_seen, correct, wrong').eq('user_id', uid),
   ])
+  // Интернет жоқ — телефондағы кэштен ашамыз
+  if (p.error && isNetError(p.error)) {
+    const snap = loadSnapshot(uid)
+    setState({ online: false })
+    if (snap) setState({ ...snap, words: { ...snap.words, ...pendingWords(uid) } })
+    return
+  }
   setState({
     profile: (p.data as Profile) ?? null,
     progress: Object.fromEntries((prog.data ?? []).map((r) => [r.lesson_id, r.stars])),
     days: Object.fromEntries((act.data ?? []).map((r) => [r.day, r.xp])),
     // stage -1 — өшірілген сөз (тест нәтижесін жойғанда), оны мүлде есептемейміз
     words: Object.fromEntries(
-      ((words.data ?? []) as (WordState & { word: string })[]).filter((r) => r.stage >= 0).map(({ word, ...st }) => [word, st]),
+      [
+        ...((words.data ?? []) as (WordState & { word: string })[]).map(({ word, ...st }) => [word, st] as const),
+        // Әлі жіберілмеген (офлайнда үйренген) сөздер серверден жаңарақ
+        ...Object.entries(pendingWords(uid)),
+      ].filter(([, st]) => st.stage >= 0),
     ),
     // Кесте әлі жасалмаса (миграция орындалмаса) — қате емес, жай бос тізім
     wordsLoaded: !words.error,
@@ -65,6 +94,7 @@ export async function loadFriends() {
   const { data } = await supabase
     .from('friendships')
     .select('id, status, requester, addressee, req:profiles!friendships_requester_fkey(*), adr:profiles!friendships_addressee_fkey(*)')
+  if (!data) return // интернет жоқ — бұрынғы тізім қала береді
   const rows = (data ?? []) as unknown as {
     id: number
     status: 'pending' | 'accepted'
@@ -108,6 +138,7 @@ export async function loadInvites() {
     .eq('status', 'invited')
     .gte('created_at', since)
     .order('created_at', { ascending: false })
+  if (!data) return
   setState({ invites: (data ?? []) as DialogSession[] })
 }
 
@@ -124,6 +155,7 @@ export async function loadActiveDialogs() {
     .gte('updated_at', since)
     .order('updated_at', { ascending: false })
     .limit(10)
+  if (!data) return
   setState({ activeDialogs: (data ?? []) as DialogSession[] })
 }
 
@@ -195,6 +227,7 @@ function stopPolling() {
 export async function saveProfile(patch: { name?: string; cat?: CatLook }) {
   const uid = getState().session?.user.id
   if (!uid) return
+  if (!navigator.onLine) return toast(t.needOnline)
   const { data, error } = await supabase.from('profiles').update(patch).eq('id', uid).select().single()
   if (error) return toast(t.errNetwork)
   setState({ profile: data as Profile })
@@ -208,12 +241,11 @@ export async function completeLesson(lessonId: string, stars: number, xp: number
     days: { ...s.days, [day]: (s.days[day] ?? 0) + xp },
     profile: s.profile ? { ...s.profile, xp: s.profile.xp + xp, coins: s.profile.coins + coins } : s.profile,
   }))
-  const { data, error } = await supabase.rpc('complete_lesson', { p_lesson: lessonId, p_stars: stars, p_xp: xp, p_coins: coins, p_day: day })
-  if (error) toast(t.errNetwork)
-  else setState({ profile: data as Profile })
+  await callOrQueue({ fn: 'complete_lesson', args: { p_lesson: lessonId, p_stars: stars, p_xp: xp, p_coins: coins, p_day: day } })
 }
 
 export async function buyItem(id: string, price: number) {
+  if (!navigator.onLine) return toast(t.needOnline)
   const { data, error } = await supabase.rpc('buy_item', { p_item: id, p_price: price })
   if (error) return toast(t.notEnough)
   setState({ profile: data as Profile })
@@ -222,6 +254,10 @@ export async function buyItem(id: string, price: number) {
 
 /** Промокод: дұрыс болса тиын қосылады. Қайтарады: қосылған тиын саны немесе null */
 export async function redeemPromo(code: string) {
+  if (!navigator.onLine) {
+    toast(t.needOnline)
+    return null
+  }
   const { data, error } = await supabase.rpc('redeem_promo', { p_code: code })
   if (error) {
     toast(t.errNetwork)
@@ -242,9 +278,47 @@ export async function saveWords(updates: Record<string, WordState>) {
   const uid = getState().session?.user.id
   if (!uid) return
   setState((s) => ({ words: { ...s.words, ...updates } }))
+  if (!navigator.onLine) return queueWords(uid, updates)
+  const error = await upsertWords(uid, updates)
+  if (error && isNetError(error)) queueWords(uid, updates)
+  else if (error) toast(t.errNetwork)
+}
+
+async function upsertWords(uid: string, updates: Record<string, WordState>) {
   const rows = Object.entries(updates).map(([word, st]) => ({ user_id: uid, word, ...st }))
   const { error } = await supabase.from('word_progress').upsert(rows)
-  if (error) toast(t.errNetwork)
+  return error
+}
+
+/** XP/сабақ RPC: интернет болмаса — кезекке, кейін жіберіледі (экрандағы сан бірден жаңарған) */
+async function callOrQueue(rpc: Rpc) {
+  const uid = getState().session?.user.id
+  if (!uid) return
+  if (!navigator.onLine) return queueRpc(uid, rpc)
+  const { data, error } = await supabase.rpc(rpc.fn, rpc.args)
+  if (error && isNetError(error)) queueRpc(uid, rpc)
+  else if (error) toast(t.errNetwork)
+  else setState({ profile: data as Profile })
+}
+
+let syncing = false
+/** Кезектегі өзгерістерді жіберіп, деректерді серверден жаңарту */
+export async function syncNow() {
+  const uid = getState().session?.user.id
+  if (!uid || syncing || !navigator.onLine) return
+  syncing = true
+  try {
+    const ok = await flushOutbox(uid, {
+      words: (w) => upsertWords(uid, w),
+      rpc: async (r) => (await supabase.rpc(r.fn, r.args)).error,
+    })
+    if (ok) {
+      setState({ online: true })
+      await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs()])
+    }
+  } finally {
+    syncing = false
+  }
 }
 
 /** Ескі деңгей тесті барлық сөзді бірден «білемін» деп жапқан еді — енді оларды тексерілмеген етеміз */
@@ -280,9 +354,7 @@ export async function addXp(xp: number, coins: number) {
     days: { ...s.days, [day]: (s.days[day] ?? 0) + xp },
     profile: s.profile ? { ...s.profile, xp: s.profile.xp + xp, coins: s.profile.coins + coins } : s.profile,
   }))
-  const { data, error } = await supabase.rpc('add_xp', { p_xp: xp, p_coins: coins, p_day: day })
-  if (error) toast(t.errNetwork)
-  else setState({ profile: data as Profile })
+  await callOrQueue({ fn: 'add_xp', args: { p_xp: xp, p_coins: coins, p_day: day } })
 }
 
 // ---------- Достар ----------
@@ -373,7 +445,27 @@ let authStarted = false
 export function initAuth() {
   if (authStarted) return
   authStarted = true
-  void supabase.auth.getSession().then(({ data }) => handleSession(data.session))
+  startSnapshotting()
+  watchOnline(() => {
+    // Интернет қайта келді: сессияны жаңартып, кезекті жібереміз
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session && data.session.user.id === getState().session?.user.id) setState({ session: data.session })
+      void syncNow()
+    })
+  })
+  void supabase.auth.getSession().then(({ data, error }) => {
+    if (!data.session && (error || !navigator.onLine)) {
+      // Интернетсіз ашылды және токен ескірген: соңғы кірген адамның кэшімен жалғастырамыз
+      let uid: string | null = null
+      try {
+        uid = localStorage.getItem(LAST_UID)
+      } catch {
+        /* бос */
+      }
+      if (uid && loadSnapshot(uid)) return handleSession({ user: { id: uid } } as unknown as Session)
+    }
+    return handleSession(data.session)
+  })
   supabase.auth.onAuthStateChange((_e, session) => {
     if (session?.user.id !== getState().session?.user.id) void handleSession(session)
     else setState({ session })
@@ -387,6 +479,15 @@ async function handleSession(session: Session | null) {
     stopPolling()
     setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {} })
     return
+  }
+  refreshPending(session.user.id)
+  if (navigator.onLine) {
+    // Алдымен офлайнда жиналған өзгерістер, сосын жаңа деректер
+    const uid = session.user.id
+    await flushOutbox(uid, {
+      words: (w) => upsertWords(uid, w),
+      rpc: async (r) => (await supabase.rpc(r.fn, r.args)).error,
+    })
   }
   await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs()])
   startRealtime()

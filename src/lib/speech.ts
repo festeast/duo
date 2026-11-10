@@ -238,6 +238,8 @@ function playOne(text: string, slow: boolean, my: number, onDone?: () => void, f
         // Файл табылмаса — екінші Google дауысын байқап көреміз.
         if (err?.name === 'NotAllowedError' || err?.name === 'AbortError') return
         if (retry) play(dir === 'female' ? 'male' : 'female', false)
+        // Интернет жоқ және жазба жүктелмеген — тек сонда телефон дауысына ауысамыз
+        else if (!navigator.onLine) speakDevice(text, slow, onDone)
         else onDone?.()
       })
     }

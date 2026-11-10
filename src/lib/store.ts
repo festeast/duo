@@ -25,6 +25,8 @@ export type State = {
   activeDialogs: DialogSession[] // кідіртілген (жалғастыруға болатын) диалогтар
   sound: boolean
   toast: string | null
+  online: boolean // интернет бар ма
+  pending: number // серверге әлі жіберілмеген өзгерістер саны
 }
 
 const SOUND_KEY = 'duo-sound'
@@ -50,6 +52,8 @@ let state: State = {
   activeDialogs: [],
   sound: loadSound(),
   toast: null,
+  online: typeof navigator === 'undefined' ? true : navigator.onLine,
+  pending: 0,
 }
 
 const listeners = new Set<() => void>()
@@ -74,6 +78,7 @@ export function setState(patch: Partial<State> | ((s: State) => Partial<State>))
 }
 
 export const getState = () => state
+export const subscribeStore = subscribe
 
 export function useStore<T>(sel: (s: State) => T): T {
   return useSyncExternalStore(subscribe, () => sel(state))
