@@ -31,8 +31,23 @@ let closing = false
 let afterClose: (() => void) | null = null
 let waiting: ((a: string[]) => void) | null = null // жабылуын күтіп тұрған тыңдау
 
+let idleWaiters: (() => void)[] = []
+
+/** Микрофон толық жабылғанша күту (iPhone-да дыбысты содан кейін ғана ойнатамыз,
+ *  әйтпесе аудио сессия «жазу» режимінде қалып, микрофон белгісі сөнбейді) */
+export function micIdle(): Promise<void> {
+  if (!closing && !busy) return Promise.resolve()
+  return new Promise((r) => {
+    idleWaiters.push(r)
+    setTimeout(r, 800) // onend келмесе де ұзақ күтпейміз
+  })
+}
+
 function closed() {
   closing = false
+  const ws = idleWaiters
+  idleWaiters = []
+  setTimeout(() => ws.forEach((w) => w()), 150)
   const fn = afterClose
   afterClose = null
   waiting = null

@@ -5,7 +5,7 @@ import type { Pair } from '../data/course'
 import type { Word } from '../data/words'
 import { t } from '../i18n/kk'
 import { exampleFor, shuffle } from '../lib/exercises'
-import { canListen, judge, listenOnce, stopListening } from '../lib/listen'
+import { canListen, judge, listenOnce, micIdle, stopListening } from '../lib/listen'
 import { sfx } from '../lib/sound'
 import { canSpeak, speak } from '../lib/speech'
 import type { CatLook } from '../lib/types'
@@ -304,6 +304,8 @@ export function MicButton({ target, onResult, label = t.micSay }: { target: stri
       const r = judge(alts, target)
       setHeard(r.text)
       setState(r.ok ? 'ok' : 'no')
+      // Дыбыс (сфх, репликаны айту) — микрофон толық жабылғаннан кейін
+      await micIdle()
       if (r.ok) sfx.correct()
       else sfx.wrong()
       onResult(r.ok, r.text)
