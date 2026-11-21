@@ -6,7 +6,7 @@ import { getSolo } from '../lib/dialogProgress'
 import { t } from '../i18n/kk'
 import { acceptFriend, addFriend, inviteDialog, removeFriend } from '../lib/api'
 import { sfx } from '../lib/sound'
-import { levelOf, streakOf, studiedToday, toast, useStore, weeklyXp, type Friend } from '../lib/store'
+import { levelOf, streakOf, studiedToday, toast, useStore, weeklyXp, withFrozen, type Friend } from '../lib/store'
 
 export type DialogStart = { kind: 'online'; sessionId: string } | { kind: 'solo'; dialogId: string; role: 'A' | 'B' }
 
@@ -271,7 +271,8 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
 
 function FriendCard({ f, myDays }: { f: Friend; myDays: Record<string, number> }) {
   const lvl = levelOf(f.profile.xp)
-  const together = streakOf(myDays, f.days)
+  const myFrozen = useStore((s) => s.profile?.frozen)
+  const together = streakOf(withFrozen(myDays, myFrozen), withFrozen(f.days, f.profile.frozen))
   const today = studiedToday(f.days)
   return (
     <div className="card friend-card">

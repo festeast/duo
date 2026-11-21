@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { Link2, Mic, Snail, Sparkles, TriangleAlert, Volume2 } from './Icon'
+import { Link2, Mic, Shapes, Snail, Sparkles, TriangleAlert, Volume2 } from './Icon'
+import { FormsSheet } from './FormsSheet'
 import type { Pair } from '../data/course'
 import type { Word } from '../data/words'
 import { t } from '../i18n/kk'
@@ -328,6 +329,7 @@ export function MicButton({ target, onResult, label = t.micSay }: { target: stri
 
 export function WordCard({ w }: { w: Word }) {
   const ex = useMemo(() => exampleFor(w), [w])
+  const [forms, setForms] = useState(false)
   return (
     <div className="word-card pop">
       <span className="new-badge">
@@ -345,6 +347,10 @@ export function WordCard({ w }: { w: Word }) {
           <span className="muted small">{ex[1]}</span>
         </button>
       )}
+      <button className="link-btn" onClick={() => setForms(true)}>
+        <Shapes size={16} /> {t.formsOpen}
+      </button>
+      {forms && <FormsSheet tr={w.tr} onClose={() => setForms(false)} />}
     </div>
   )
 }

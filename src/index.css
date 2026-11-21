@@ -557,3 +557,27 @@ h2.ih, h3.ih { display: flex; }
 .offline-label { font-weight: 800; }
 .offline-note { background: var(--bg-2); color: var(--muted); align-items: flex-start; }
 .header .muted { white-space: nowrap; }
+
+/* Төменнен шығатын парақ (сөздің түрлері) */
+.sheet-back { position: fixed; inset: 0; background: rgba(20, 16, 30, .45); z-index: 60; display: flex; align-items: flex-end; justify-content: center; }
+.sheet { background: var(--bg); width: 100%; max-width: 560px; max-height: 82vh; overflow-y: auto; border-radius: 24px 24px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; }
+.small-word { font-size: 26px; }
+.form-row { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 10px 12px; color: var(--text); cursor: pointer; }
+.form-word { font-size: 18px; color: var(--blue-dark); }
+.form-label { font-size: 12px; font-weight: 800; background: var(--blue-soft); color: var(--blue-dark); border-radius: 99px; padding: 2px 8px; }
+
+/* Қиын сөздер */
+.hard-card { display: flex; flex-direction: column; gap: 12px; border: 2px solid var(--purple); }
+.hard-ico { width: 46px; height: 46px; border-radius: 14px; background: color-mix(in srgb, var(--purple) 16%, transparent); color: var(--purple); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chip-word.hard { background: color-mix(in srgb, var(--purple) 14%, transparent); color: var(--purple); }
+.btn.purple { --c: var(--purple); --d: #6e44b0; }
+
+/* Дүкен: мұз, сыйлық */
+.freeze-card { display: flex; align-items: center; gap: 12px; }
+.freeze-ico { width: 50px; height: 50px; border-radius: 16px; background: #e3f3ff; color: #2f8fd6; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.freeze-have { color: #2f8fd6; font-weight: 800; }
+.gift-row { display: flex; align-items: center; gap: 10px; }
+.friend-pick { border: 2px solid var(--line); background: var(--card-2); color: var(--text); cursor: pointer; }
+.friend-pick.on { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-dark); }
+.center-modal { align-items: center; padding: 16px; }
+.gift-modal { max-width: 360px; width: 100%; gap: 12px; }

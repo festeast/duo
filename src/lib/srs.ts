@@ -50,7 +50,7 @@ export function daysBetween(from: string, to: string) {
   return Math.round((b.getTime() - a.getTime()) / 86400000)
 }
 
-export type Plan = { review: Word[]; fresh: Word[]; check: Word[]; dueTotal: number; doneToday: number; unverified: number }
+export type Plan = { review: Word[]; fresh: Word[]; check: Word[]; dueTotal: number; doneToday: number; unverified: number; hard?: boolean }
 
 export const MAX_CHECKS = 15 // күніне тексерілетін «тексерілмеген» сөздер
 
@@ -169,6 +169,25 @@ export function dueLabel(due_on: string, today = dayKey()) {
   if (n < 7) return `${n} күннен кейін`
   if (n < 30) return `${Math.round(n / 7)} аптадан кейін`
   return `${Math.round(n / 30)} айдан кейін`
+}
+
+/** Қиын сөздер: жиі қате жіберілгендер (қате × 2 − дұрыс > 0), ең қиыны бірінші */
+export function hardWords(states: Record<string, WordState>, limit = 10): Word[] {
+  return WORD_LIST.map((w) => ({ w, s: states[w.tr] }))
+    .filter(({ s }) => s && s.stage >= 1 && s.wrong >= 1 && s.wrong * 2 - s.correct > 0)
+    .sort((a, b) => b.s.wrong * 2 - b.s.correct - (a.s.wrong * 2 - a.s.correct))
+    .slice(0, limit)
+    .map(({ w }) => w)
+}
+
+/** Қиын сөздер жаттығуының жоспары */
+export function hardPlan(states: Record<string, WordState>): Plan {
+  return { review: hardWords(states), fresh: [], check: [], dueTotal: 0, doneToday: 0, unverified: 0, hard: true }
+}
+
+/** Қиын сөз жаттығуынан кейін: дұрыс — тек «дұрыс» саны өседі (кесте өзгермейді), қате — қайтадан ертең */
+export function gradeHard(prev: WordState, ok: boolean, today = dayKey()): WordState {
+  return ok ? { ...prev, correct: prev.correct + 1 } : grade(prev, false, today)
 }
 
 /** Сөз қаншалықты бекіген (0–1) */

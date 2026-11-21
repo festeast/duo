@@ -17,6 +17,7 @@ import { Today } from './screens/Today'
 import { Placement } from './screens/Placement'
 import type { Plan } from './lib/srs'
 import { Setup } from './screens/Setup'
+import { GiftModal } from './components/GiftModal'
 import { Shop } from './screens/Shop'
 import { Together, type DialogStart } from './screens/Together'
 
@@ -138,6 +139,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {session && profile && <GiftModal />}
       {session && profile && !inDialog && <InviteBanner onJoin={(sessionId) => go({ name: 'dialog', start: { kind: 'online', sessionId } })} />}
       {body}
       {toastMsg && <div className="toast pop">{toastMsg}</div>}

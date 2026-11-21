@@ -217,7 +217,7 @@ const MATCHERS: Matcher[] = WORD_LIST.map((w) => {
 }).sort((a, b) => b.parts.length - a.parts.length || b.len - a.len)
 
 /** Сөйлемде кездесетін сөздік сөздері және танылмаған сөздер саны */
-export function analyze(sentence: string): { uses: string[]; unknown: number } {
+export function analyze(sentence: string, onHit?: (tr: string, form: string) => void): { uses: string[]; unknown: number } {
   const toks = tokensOf(sentence)
   const used = new Set<string>()
   let unknown = 0
@@ -235,6 +235,7 @@ export function analyze(sentence: string): { uses: string[]; unknown: number } {
     }
     if (hit) {
       used.add(hit.tr)
+      onHit?.(hit.tr, toks.slice(i, i + hit.parts.length).join(' '))
       i += hit.parts.length - 1
     } else unknown++
   }

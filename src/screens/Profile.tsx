@@ -10,7 +10,7 @@ import { t } from '../i18n/kk'
 import { redeemPromo, resetPlacement, signOut } from '../lib/api'
 import { sfx } from '../lib/sound'
 import { getTheme, setTheme, type Theme } from '../lib/theme'
-import { levelOf, setState, streakOf, toast, useStore } from '../lib/store'
+import { levelOf, setState, streakOf, toast, useStore, withFrozen } from '../lib/store'
 
 export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlacement: () => void }) {
   const [perDay, setPerDay] = useState(getNewPerDay())
@@ -51,7 +51,7 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
         </div>
         <div className="stat">
           <span className="muted small">{t.bestStreak}</span>
-          <b className="fire-text">{streakOf(days)}</b>
+          <b className="fire-text">{streakOf(withFrozen(days, me.frozen))}</b>
         </div>
       </div>
 

@@ -19,6 +19,8 @@ export type Profile = {
   xp: number
   coins: number
   owned: string[]
+  freezes?: number // қолдағы «мұз» саны (серияны сақтау)
+  frozen?: string[] // мұзбен жабылған күндер
 }
 
 export type DialogSession = {

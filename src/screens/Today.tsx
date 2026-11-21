@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { CheckCircle2, Lightbulb, Repeat, Sparkles, Target } from '../components/Icon'
+import { FormsSheet } from '../components/FormsSheet'
+import { Brain, CheckCircle2, Lightbulb, Repeat, Sparkles, Target } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { CognateBadge } from '../components/Exercises'
 import { tipOfDay } from '../data/grammar'
@@ -7,7 +8,7 @@ import { WORD_LIST } from '../data/words'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
 import { speak } from '../lib/speech'
-import { MAX_STAGE, dueLabel, getNewPerDay, isLearned, todayPlan, type Plan } from '../lib/srs'
+import { MAX_STAGE, dueLabel, getNewPerDay, hardPlan, hardWords, isLearned, todayPlan, type Plan } from '../lib/srs'
 import { placedKey } from '../lib/placement'
 import { dayKey, studiedToday, useStore } from '../lib/store'
 
@@ -31,7 +32,9 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
   const [skipTest, setSkipTest] = useState(false)
   const [extra, setExtra] = useState(readExtra)
   const [showAll, setShowAll] = useState(false)
+  const [formsOf, setFormsOf] = useState<string | null>(null)
   const plan = useMemo(() => todayPlan(words, extra), [words, extra])
+  const hard = useMemo(() => hardWords(words), [words])
   const tip = useMemo(() => tipOfDay(), [])
 
   const learned = useMemo(
@@ -157,6 +160,37 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
 
       {plan.unverified > 0 && <p className="muted small center" style={{ margin: 0 }}>{t.unverifiedLeft(plan.unverified)}</p>}
 
+      {/* ---------- Қиын сөздер ---------- */}
+      {hard.length >= 3 && (
+        <section className="card hard-card">
+          <div className="row" style={{ gap: 12 }}>
+            <span className="hard-ico">
+              <Brain size={26} />
+            </span>
+            <div className="col" style={{ gap: 2, flex: 1 }}>
+              <h3 style={{ margin: 0 }}>{t.hardTitle}</h3>
+              <span className="muted small">{t.hardText(hard.length)}</span>
+            </div>
+          </div>
+          <div className="chips">
+            {hard.map((w) => (
+              <span key={w.tr} className="chip-word hard">
+                {w.tr}
+              </span>
+            ))}
+          </div>
+          <button
+            className="btn purple wide"
+            onClick={() => {
+              sfx.click()
+              onStart(hardPlan(words))
+            }}
+          >
+            {t.hardStart}
+          </button>
+        </section>
+      )}
+
       {/* ---------- Бүгінгі кеңес ---------- */}
       <section className="card tip">
         <span className="muted small ih">
@@ -187,7 +221,14 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
           {(showAll ? learned : learned.slice(0, 15)).map((w) => {
             const st = words[w.tr]
             return (
-              <button key={w.tr} className="word-row" onClick={() => speak(w.tr)}>
+              <button
+                key={w.tr}
+                className="word-row"
+                onClick={() => {
+                  speak(w.tr)
+                  setFormsOf(w.tr)
+                }}
+              >
                 <span className="wr-emoji">{w.emoji ?? '•'}</span>
                 <span className="wr-main">
                   <b>
@@ -213,6 +254,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
           </button>
         )}
       </section>
+      {formsOf && <FormsSheet tr={formsOf} onClose={() => setFormsOf(null)} />}
     </div>
   )
 }

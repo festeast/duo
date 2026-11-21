@@ -86,6 +86,7 @@ export async function loadMe() {
   })
   if (words.error) console.warn('word_progress:', words.error.message)
   else await fixLegacyPlacement()
+  await applyFreezes()
 }
 
 export async function loadFriends() {
@@ -183,6 +184,7 @@ export function startRealtime() {
       void loadActiveDialogs()
     })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'dialog_sessions', filter: `host=eq.${uid}` }, () => void loadActiveDialogs())
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gifts', filter: `receiver=eq.${uid}` }, () => void loadGifts())
     .subscribe((status) => {
       // Байланыс үзілсе — біраздан соң қайта қосыламыз
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') setTimeout(() => getState().session && startRealtime(), 5000)
@@ -204,6 +206,7 @@ function refreshAll() {
   void loadFriends()
   void loadInvites()
   void loadActiveDialogs()
+  void loadGifts()
 }
 
 function onVisible() {
@@ -270,6 +273,73 @@ export async function redeemPromo(code: string) {
   }
   toast(res === 'used' ? t.promoUsed : res === 'limit' ? t.promoLimit : t.promoNotFound)
   return null
+}
+
+// ---------- Серияны сақтау («мұз») ----------
+
+export async function buyFreeze() {
+  if (!navigator.onLine) return toast(t.needOnline)
+  const { data, error } = await supabase.rpc('buy_freeze')
+  if (error) return toast(t.freezeCant)
+  setState({ profile: data as Profile })
+  return true
+}
+
+/** Кеше (немесе 2–3 күн) сабақ өтілмесе және мұз болса — серияны сақтаймыз */
+async function applyFreezes() {
+  const { profile, days } = getState()
+  if (!profile?.freezes) return
+  const frozen = new Set(profile.frozen ?? [])
+  const active = (d: string) => (days[d] ?? 0) > 0 || frozen.has(d)
+  const missed: string[] = []
+  for (let n = 1; n <= 3; n++) {
+    const d = daysAgo(n)
+    if (active(d)) break
+    missed.push(d)
+  }
+  // Үзіліс алдында серия болуы керек және мұз жетуі керек
+  if (!missed.length || missed.length > profile.freezes || !active(daysAgo(missed.length + 1))) return
+  const { data, error } = await supabase.rpc('use_freezes', { p_days: missed, p_today: dayKey() })
+  if (error || !data) return
+  const next = data as Profile
+  const used = (profile.freezes ?? 0) - (next.freezes ?? 0)
+  setState({ profile: next })
+  if (used > 0) toast(t.freezeUsed(used))
+}
+
+// ---------- Сыйлықтар ----------
+
+/** Досыңа кейіпкер сыйлау */
+export async function giftChar(friendId: string, item: string) {
+  if (!navigator.onLine) return toast(t.needOnline)
+  const { data, error } = await supabase.rpc('gift_char', { p_friend: friendId, p_item: item })
+  if (error) return toast(t.errNetwork)
+  if (data !== 'ok') {
+    const msg: Record<string, string> = { owned: t.giftOwned, no_coins: t.notEnough, not_friend: t.giftNotFriend }
+    return toast(msg[data as string] ?? String(data))
+  }
+  await Promise.all([loadMe(), loadFriends()])
+  return true
+}
+
+/** Маған келген, әлі көрілмеген сыйлықтар */
+export async function loadGifts() {
+  const uid = getState().session?.user.id
+  if (!uid) return
+  const { data } = await supabase.from('gifts').select('id, item, sender, seen, from:profiles!gifts_sender_fkey(name)').eq('receiver', uid).eq('seen', false)
+  if (!data) return
+  const gifts = (data as unknown as { id: number; item: string; from: { name: string } | null }[]).map((g) => ({
+    id: g.id,
+    item: g.item,
+    from: g.from?.name ?? '',
+  }))
+  setState({ gifts })
+  if (gifts.length) void loadMe()
+}
+
+export async function giftsSeen() {
+  setState({ gifts: [] })
+  await supabase.rpc('gifts_seen')
 }
 
 // ---------- Сөздер (аралықпен қайталау) ----------
@@ -477,7 +547,7 @@ async function handleSession(session: Session | null) {
   if (!session) {
     stopRealtime()
     stopPolling()
-    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {} })
+    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {}, gifts: [] })
     return
   }
   refreshPending(session.user.id)
@@ -489,7 +559,7 @@ async function handleSession(session: Session | null) {
       rpc: async (r) => (await supabase.rpc(r.fn, r.args)).error,
     })
   }
-  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs()])
+  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs(), loadGifts()])
   startRealtime()
   setState({ ready: true })
 }

@@ -10,7 +10,7 @@ import { checkDictation, checkTyped, normTr, shuffle, tokenize, type DictWord } 
 import { canListen } from '../lib/listen'
 import { sfx } from '../lib/sound'
 import { speak, stopSpeaking } from '../lib/speech'
-import { grade, gradeCheck, type Plan, type WordState } from '../lib/srs'
+import { grade, gradeCheck, gradeHard, type Plan, type WordState } from '../lib/srs'
 import { getState, levelOf, useStore } from '../lib/store'
 import type { LessonResult } from './Result'
 
@@ -129,7 +129,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     const words = [...plan.review, ...plan.fresh]
     const states = getState().words
     const updates: Record<string, WordState> = {}
-    for (const w of words) updates[w.tr] = grade(states[w.tr], !failed.has(w.tr))
+    for (const w of words) updates[w.tr] = plan.hard && states[w.tr] ? gradeHard(states[w.tr], !failed.has(w.tr)) : grade(states[w.tr], !failed.has(w.tr))
     for (const w of plan.check) if (states[w.tr]) updates[w.tr] = gradeCheck(states[w.tr], !checkFailed.has(w.tr))
     void saveWords(updates)
     const perfect = mistakes === 0
@@ -137,14 +137,15 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     const coins = 10 + (perfect ? 5 : 0)
     void addXp(xp, coins)
     onFinish({
-      title: t.sessionComplete,
+      title: plan.hard ? t.hardDone : t.sessionComplete,
       stars: perfect ? 3 : mistakes <= 2 ? 2 : 1,
       xp,
       coins,
       accuracy: Math.round((total / (total + mistakes)) * 100),
       levelUp: levelOf(me.xp + xp).level > levelOf(me.xp).level,
-      summary:
-        t.sessionSummary(plan.fresh.length, plan.review.length) +
+      summary: plan.hard
+        ? t.hardSummary(words.length - words.filter((w) => failed.has(w.tr)).length, words.length)
+        : t.sessionSummary(plan.fresh.length, plan.review.length) +
         (plan.check.length ? ` · ${plan.check.length - checkFailed.size}/${plan.check.length} ${t.checkKnown}` : ''),
     })
   }

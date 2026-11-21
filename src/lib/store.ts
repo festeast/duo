@@ -27,6 +27,7 @@ export type State = {
   toast: string | null
   online: boolean // интернет бар ма
   pending: number // серверге әлі жіберілмеген өзгерістер саны
+  gifts: { id: number; from: string; item: string }[] // маған келген, әлі көрілмеген сыйлықтар
 }
 
 const SOUND_KEY = 'duo-sound'
@@ -54,6 +55,7 @@ let state: State = {
   toast: null,
   online: typeof navigator === 'undefined' ? true : navigator.onLine,
   pending: 0,
+  gifts: [],
 }
 
 const listeners = new Set<() => void>()
@@ -115,6 +117,14 @@ export function streakOf(...people: Record<string, number>[]): number {
   let count = 0
   while (studied(start + count)) count++
   return count
+}
+
+/** Мұзбен жабылған күндерді «оқылған» деп есептейміз (серия үзілмейді) */
+export function withFrozen(days: Record<string, number>, frozen?: string[]) {
+  if (!frozen?.length) return days
+  const d = { ...days }
+  for (const f of frozen) d[f] = Math.max(d[f] ?? 0, 1)
+  return d
 }
 
 export const studiedToday = (days: Record<string, number>) => (days[dayKey()] ?? 0) > 0

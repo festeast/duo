@@ -1,4 +1,4 @@
-import { levelOf, streakOf, useStore } from '../lib/store'
+import { levelOf, streakOf, useStore, withFrozen } from '../lib/store'
 import { CloudUpload, Coin, Flame, WifiOff } from './Icon'
 import { t } from '../i18n/kk'
 import { Cat } from './Cat'
@@ -10,7 +10,7 @@ export function Header({ onCat }: { onCat: () => void }) {
   const pending = useStore((s) => s.pending)
   if (!me) return null
   const lvl = levelOf(me.xp)
-  const streak = streakOf(days)
+  const streak = streakOf(withFrozen(days, me.frozen))
 
   return (
     <header className="header">
