@@ -206,10 +206,9 @@ export const t = {
   wear: 'Кию',
   takeOff: 'Шешу',
   notEnough: 'Тиын жетпейді',
-  slots: { ear: 'Құлақ', face: 'Көз', cheek: 'Ұрт' } as Record<string, string>,
 
   // Кейіпкерлер
-  charsTitle: 'Менің кейіпкерім',
+  charsTitle: 'Кейіпкерлер',
   charsHint: 'Мысықтарды тиынға сатып алып, кез келгенін таңдай аласың.',
   charBasic: 'Қарапайым мысық',
   charSelected: 'Таңдалған',

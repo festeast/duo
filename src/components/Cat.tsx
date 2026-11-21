@@ -2,8 +2,7 @@ import { memo, useId } from 'react'
 import { EYES, FURS, type Mood } from '../data/cat'
 import type { CatLook } from '../lib/types'
 import { AnimeCatArt, type CharId } from './AnimeCat'
-import { Accessories, SVG_CAT_ANCHOR } from './Accessories'
-import { ANCHORS, CHARACTERS, SPRITES, spriteUrl } from '../data/characters'
+import { CHARACTERS, SPRITES, spriteUrl } from '../data/characters'
 
 type Props = {
   look: CatLook
@@ -22,20 +21,16 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
   const sw = 5 // контур қалыңдығы
 
   // Салынған суреті бар кейіпкер: үлкенде — бойы толық, кішіде — беті.
-  // Дүкен заттары суреттің үстіне бас пен мойынның орнына қарай тағылады.
   // Кейіпкер таңдалмаса — қарапайым мысық (classic)
   const charId = look.char && SPRITES[look.char] ? look.char : 'classic'
   const sprite = spriteUrl(charId, mood)
   if (sprite) {
     const meta = SPRITES[charId]
-    const an = ANCHORS[charId]
     const full = size >= 120
     const [fx, fy, fs] = meta.face
     const vb = full ? [0, 0, meta.w, meta.h] : [fx, fy, fs, fs]
     const w = full ? (size * 1.55 * meta.w) / meta.h : size
     const h = full ? size * 1.55 : size
-    // Мысық суретінің координаттары: көздер ортасы (100, 98), арасы 56, төбесі ≈ 38
-    const fa = an ? (an.moods?.[mood] ?? an) : null
     return (
       <svg
         viewBox={vb.join(' ')}
@@ -55,7 +50,6 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
         <g clipPath={full ? undefined : `url(#c${uid})`}>
           {!full && <circle cx={fx + fs / 2} cy={fy + fs / 2} r={fs / 2} className="cat-face-bg" />}
           <image href={sprite} width={meta.w} height={meta.h} />
-          {fa && <Accessories look={look} an={fa} id={`a${uid}`} />}
         </g>
       </svg>
     )
@@ -176,7 +170,6 @@ function CatInner({ look, size = 96, mood = 'normal', bounce, flip, className = 
         <path d="M156 120 L182 122" />
       </g>
 
-      <Accessories look={look} an={SVG_CAT_ANCHOR} id={`a${uid}`} faceScale={1} />
     </svg>
   )
 }

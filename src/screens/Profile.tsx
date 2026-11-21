@@ -1,7 +1,6 @@
 import { Cat } from '../components/Cat'
 import { Gift, Moon, PenLine, Target, Trash2, Volume2, VolumeX } from '../components/Icon'
 import { VoiceSettings } from '../components/VoiceSettings'
-import { CharacterPicker } from '../components/CharacterPicker'
 import { Reminders } from '../components/Reminders'
 import { OfflinePack } from '../components/OfflinePack'
 import { BANDS } from '../data/words'
@@ -40,7 +39,6 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
         </div>
       </div>
 
-      <CharacterPicker />
 
       <div className="stat-row">
         <div className="stat">
