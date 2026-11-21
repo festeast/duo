@@ -3,6 +3,7 @@ import { Gift, Moon, PenLine, Target, Trash2, Volume2, VolumeX } from '../compon
 import { VoiceSettings } from '../components/VoiceSettings'
 import { Reminders } from '../components/Reminders'
 import { OfflinePack } from '../components/OfflinePack'
+import { Badges } from '../components/Badges'
 import { BANDS } from '../data/words'
 import { NEW_OPTIONS, estimatedBand, getNewPerDay, setNewPerDay } from '../lib/srs'
 import { useState } from 'react'
@@ -39,7 +40,6 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
         </div>
       </div>
 
-
       <div className="stat-row">
         <div className="stat">
           <span className="muted small">{t.totalXp}</span>
@@ -54,6 +54,8 @@ export function Profile({ onEdit, onPlacement }: { onEdit: () => void; onPlaceme
           <b className="fire-text">{streakOf(withFrozen(days, me.frozen))}</b>
         </div>
       </div>
+
+      <Badges />
 
       <div className="card row">
         <span className="muted small" style={{ flex: 1 }}>

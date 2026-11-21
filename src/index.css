@@ -581,3 +581,14 @@ h2.ih, h3.ih { display: flex; }
 .friend-pick.on { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-dark); }
 .center-modal { align-items: center; padding: 16px; }
 .gift-modal { max-width: 360px; width: 100%; gap: 12px; }
+
+/* Жетістіктер */
+.badge-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; }
+.badge { background: none; border: 0; padding: 4px 0; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: var(--text); }
+.badge-ico { border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--card-2); color: var(--muted); border: 2px solid var(--line); }
+.badge-ico.on { border: 0; }
+.badge-name { font-size: 11.5px; font-weight: 800; text-align: center; line-height: 1.15; }
+.badge.sel .badge-ico { outline: 3px solid var(--blue); outline-offset: 2px; }
+.badge-bar { width: 44px; height: 5px; border-radius: 9px; background: var(--card-2); overflow: hidden; }
+.badge-bar i { display: block; height: 100%; background: var(--green); }
+.badge-detail { background: var(--bg-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }

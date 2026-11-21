@@ -13,6 +13,7 @@ import { speak, stopSpeaking } from '../lib/speech'
 import { grade, gradeCheck, gradeHard, type Plan, type WordState } from '../lib/srs'
 import { getState, levelOf, useStore } from '../lib/store'
 import type { LessonResult } from './Result'
+import { HARD_KEY } from '../lib/achievements'
 
 type Q = Ex & { key: number }
 
@@ -132,6 +133,13 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
     for (const w of words) updates[w.tr] = plan.hard && states[w.tr] ? gradeHard(states[w.tr], !failed.has(w.tr)) : grade(states[w.tr], !failed.has(w.tr))
     for (const w of plan.check) if (states[w.tr]) updates[w.tr] = gradeCheck(states[w.tr], !checkFailed.has(w.tr))
     void saveWords(updates)
+    if (plan.hard) {
+      try {
+        localStorage.setItem(HARD_KEY, String(Number(localStorage.getItem(HARD_KEY) ?? 0) + 1))
+      } catch {
+        /* бос */
+      }
+    }
     const perfect = mistakes === 0
     const xp = Math.min(40, 10 + words.length + (perfect ? 5 : 0))
     const coins = 10 + (perfect ? 5 : 0)

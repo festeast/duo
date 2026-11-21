@@ -28,6 +28,8 @@ export type State = {
   online: boolean // интернет бар ма
   pending: number // серверге әлі жіберілмеген өзгерістер саны
   gifts: { id: number; from: string; item: string }[] // маған келген, әлі көрілмеген сыйлықтар
+  achievements: string[] | null // алынған жетістіктер (null — кесте әлі жоқ)
+  newBadges: { id: string; reward: number }[] // жаңа ғана алынған (көрсету үшін)
 }
 
 const SOUND_KEY = 'duo-sound'
@@ -56,6 +58,8 @@ let state: State = {
   online: typeof navigator === 'undefined' ? true : navigator.onLine,
   pending: 0,
   gifts: [],
+  achievements: null,
+  newBadges: [],
 }
 
 const listeners = new Set<() => void>()

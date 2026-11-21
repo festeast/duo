@@ -18,6 +18,8 @@ import { Placement } from './screens/Placement'
 import type { Plan } from './lib/srs'
 import { Setup } from './screens/Setup'
 import { GiftModal } from './components/GiftModal'
+import { BadgeModal } from './components/Badges'
+import { useAchievements } from './lib/achievements'
 import { Shop } from './screens/Shop'
 import { Together, type DialogStart } from './screens/Together'
 
@@ -44,6 +46,7 @@ export default function App() {
   const session = useStore((s) => s.session)
   const profile = useStore((s) => s.profile)
   const toastMsg = useStore((s) => s.toast)
+  useAchievements()
   const [screen, setScreen] = useState<Screen>({ name: 'main', tab: 'learn' })
 
   useEffect(() => {
@@ -140,6 +143,7 @@ export default function App() {
   return (
     <div className="app">
       {session && profile && <GiftModal />}
+      {session && profile && <BadgeModal />}
       {session && profile && !inDialog && <InviteBanner onJoin={(sessionId) => go({ name: 'dialog', start: { kind: 'online', sessionId } })} />}
       {body}
       {toastMsg && <div className="toast pop">{toastMsg}</div>}

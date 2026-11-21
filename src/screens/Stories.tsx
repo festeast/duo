@@ -14,6 +14,7 @@ import { addXp } from "../lib/api";
 import { sfx } from "../lib/sound";
 import { speak, speakAll, stopSpeaking } from "../lib/speech";
 import { dayKey } from "../lib/store";
+import { checkAchievements } from "../lib/achievements";
 import { STORY_QUIZ } from "../data/storyQuiz";
 import { shuffle } from "../lib/exercises";
 
@@ -138,6 +139,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
     log[id] = dayKey();
     try {
       localStorage.setItem(READ_KEY, JSON.stringify(log));
+      checkAchievements();
     } catch {
       /* бос */
     }

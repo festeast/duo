@@ -275,6 +275,23 @@ export async function redeemPromo(code: string) {
   return null
 }
 
+// ---------- Жетістіктер ----------
+
+export async function loadAchievements() {
+  const uid = getState().session?.user.id
+  if (!uid) return
+  const { data, error } = await supabase.from('achievements').select('id').eq('user_id', uid)
+  if (error) return // кесте әлі жоқ немесе интернет жоқ
+  setState({ achievements: (data as { id: string }[]).map((r) => r.id) })
+}
+
+/** Жетістікті алу: қайтарады — тиын (0 — бұрын алынған), null — қате */
+export async function claimAchievement(id: string): Promise<number | null> {
+  const { data, error } = await supabase.rpc('claim_achievement', { p_id: id })
+  if (error) return null
+  return Number(data)
+}
+
 // ---------- Серияны сақтау («мұз») ----------
 
 export async function buyFreeze() {
@@ -547,7 +564,7 @@ async function handleSession(session: Session | null) {
   if (!session) {
     stopRealtime()
     stopPolling()
-    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {}, gifts: [] })
+    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {}, gifts: [], achievements: null, newBadges: [] })
     return
   }
   refreshPending(session.user.id)
@@ -559,7 +576,7 @@ async function handleSession(session: Session | null) {
       rpc: async (r) => (await supabase.rpc(r.fn, r.args)).error,
     })
   }
-  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs(), loadGifts()])
+  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs(), loadGifts(), loadAchievements()])
   startRealtime()
   setState({ ready: true })
 }
