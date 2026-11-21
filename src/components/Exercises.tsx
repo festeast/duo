@@ -1,11 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link2, Mic, Shapes, Snail, Sparkles, TriangleAlert, Volume2 } from './Icon'
 import { FormsSheet } from './FormsSheet'
 import type { Pair } from '../data/course'
 import type { Word } from '../data/words'
 import { t } from '../i18n/kk'
 import { exampleFor, shuffle } from '../lib/exercises'
-import { canListen, judge, listenOnce } from '../lib/listen'
+import { canListen, judge, listenOnce, stopListening } from '../lib/listen'
 import { sfx } from '../lib/sound'
 import { canSpeak, speak } from '../lib/speech'
 import type { CatLook } from '../lib/types'
@@ -287,6 +287,8 @@ type MicState = 'idle' | 'listening' | 'ok' | 'no' | 'error' | 'denied'
 export function MicButton({ target, onResult, label = t.micSay }: { target: string; onResult: (ok: boolean, heard: string) => void; label?: string }) {
   const [state, setState] = useState<MicState>('idle')
   const [heard, setHeard] = useState('')
+  // Тапсырмадан шыққанда микрофон жабылсын
+  useEffect(() => () => stopListening(), [])
   if (!canListen()) return null
 
   const go = async () => {

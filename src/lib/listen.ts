@@ -26,6 +26,18 @@ export const canListen = () => typeof window !== 'undefined' && ctor() !== null
 // рұқсат бір рет берілсе, қосымша ашық тұрғанда қайта сұралмайды.
 let shared: Rec | null = null
 let busy = false
+// Микрофон жабылып жатыр: оның кеш келетін onerror/onend оқиғалары жаңа тыңдауға әсер етпеуі керек
+let closing = false
+let afterClose: (() => void) | null = null
+let waiting: ((a: string[]) => void) | null = null // жабылуын күтіп тұрған тыңдау
+
+function closed() {
+  closing = false
+  const fn = afterClose
+  afterClose = null
+  waiting = null
+  fn?.()
+}
 let current: { resolve: (a: string[]) => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> } | null = null
 
 function recognizer(lang: string): Rec | null {
@@ -41,14 +53,18 @@ function recognizer(lang: string): Rec | null {
       const res = e.results[0]
       for (let i = 0; i < res.length; i++) alts.push(res[i].transcript)
       settle((c) => c.resolve(alts))
+      // iPhone сөйлем біткенде де тыңдауды өзі тоқтатпайды — микрофонды бірден жабамыз
+      release()
     }
     shared.onerror = (e) => {
+      if (closing) return
       // Рұқсат берілмесе — объектіні тастаймыз, келесіде қайта сұрай алсын
       if (e.error === 'not-allowed' || e.error === 'service-not-allowed') shared = null
       settle((c) => (e.error === 'no-speech' || e.error === 'aborted' ? c.resolve([]) : c.reject(new Error(e.error))))
     }
     shared.onend = () => {
       busy = false
+      if (closing) return closed()
       settle((c) => c.resolve([]))
     }
   }
@@ -75,12 +91,8 @@ export function listenOnce(lang = 'tr-TR', timeoutMs = 9000): Promise<string[]> 
     const start = (retry: boolean) => {
       // current тек осы жерде қойылады: алдыңғы тыңдаудың кеш келген onend-і жаңасын жаппауы үшін
       const timer = setTimeout(() => {
-        try {
-          r.stop()
-        } catch {
-          /* бос */
-        }
         settle((c) => c.resolve([]))
+        release()
       }, timeoutMs)
       current = { resolve, reject, timer }
       try {
@@ -99,24 +111,43 @@ export function listenOnce(lang = 'tr-TR', timeoutMs = 9000): Promise<string[]> 
         setTimeout(() => start(false), 300)
       }
     }
-    if (busy) {
-      try {
-        r.abort()
-      } catch {
-        /* бос */
-      }
-      setTimeout(() => start(true), 300)
+    if (busy) release()
+    if (closing) {
+      // Алдыңғы тыңдау толық жабылғанша күтеміз (onend келмесе — 600 мс кейін бәрібір бастаймыз)
+      afterClose = () => start(true)
+      waiting = resolve
+      setTimeout(() => closing && closed(), 600)
     } else start(true)
   })
 }
 
-export function stopListening() {
+/** Микрофонды толық жабу (iPhone-дағы қызғылт сары нүкте сөнеді) */
+function release() {
+  if (!shared || !busy) return
+  closing = true
   try {
-    shared?.stop()
+    shared.abort()
   } catch {
-    /* бос */
+    closing = false
   }
+  busy = false
 }
+
+/** Тыңдауды тоқтату: тапсырмадан шыққанда, қосымша фонға кеткенде */
+export function stopListening() {
+  if (afterClose) {
+    afterClose = null
+    waiting?.([])
+    waiting = null
+  }
+  settle((c) => c.resolve([]))
+  release()
+}
+
+if (typeof document !== 'undefined')
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') stopListening()
+  })
 
 // ---------- Салыстыру ----------
 
