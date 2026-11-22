@@ -47,7 +47,7 @@ export const STORIES2: Story[] = [
       ['Öğle yemeğinde birbirimize mesaj yazıyoruz.', 'Түскі ас кезінде бір-бірімізге хабарлама жазамыз.'],
       ['Akşam altıda eve dönüyoruz.', 'Кешкі алтыда үйге қайтамыз.'],
       ['Yemekten sonra yarım saat Türkçe çalışıyoruz.', 'Тамақтан кейін жарты сағат түрік тілін оқимыз.'],
-      ['Bazen Duo’da birlikte bir diyalog oynuyoruz.', 'Кейде Дуода бірге диалог ойнаймыз.'],
+      ['Bazen uygulamada birlikte bir diyalog oynuyoruz.', 'Кейде қосымшада бірге диалог ойнаймыз.'],
       ['Sonra bir Türk dizisi izliyoruz.', 'Сосын түрік телехикаясын көреміз.'],
       ['Altyazıyı okumadan anlamaya çalışıyoruz.', 'Субтитрді оқымай түсінуге тырысамыз.'],
       ['Saat on bir gibi yatıyoruz.', 'Сағат он бірлерде жатамыз.'],
@@ -55,7 +55,7 @@ export const STORIES2: Story[] = [
     ],
     gloss: {
       kediye: 'мысыққа', mama: 'жем (мысық тамағы)', zeytin: 'зәйтүн', buçukta: 'жарымда', metroyla: 'метромен',
-      'öğle': 'түс', yemeğinde: 'асында', birbirimize: 'бір-бірімізге', yemekten: 'тамақтан', 'duo’da': 'Дуода',
+      'öğle': 'түс', yemeğinde: 'асында', birbirimize: 'бір-бірімізге', yemekten: 'тамақтан', uygulamada: 'қосымшада',
       diyalog: 'диалог', dizisi: 'телехикаясы', altyazıyı: 'субтитрді', okumadan: 'оқымай', anlamaya: 'түсінуге',
       'çalışıyoruz': 'тырысамыз / оқимыз', gibi: '-лерде, шамасында', olacak: 'болады',
     },

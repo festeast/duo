@@ -11,7 +11,7 @@ export default async function handler(req, res) {
     initPush()
     const { data: subs } = await db.from('push_subs').select('endpoint, user_id, p256dh, auth').eq('user_id', u.user.id)
     const errors = []
-    const sent = await sendTo(db, subs ?? [], { title: 'Дуо 🐱', body: 'Хабарландыру жұмыс істеп тұр! Кешке еске саламын.', url: '/' }, errors)
+    const sent = await sendTo(db, subs ?? [], { title: 'Бірге 🐱', body: 'Хабарландыру жұмыс істеп тұр! Кешке еске саламын.', url: '/' }, errors)
     res.json({ subs: (subs ?? []).length, sent, errors })
   } catch (e) {
     res.status(500).json({ error: String(e?.message ?? e) })

@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
-        name: 'Дуо — түрік тілін бірге үйрен',
-        short_name: 'Дуо',
+        name: 'Бірге — түрік тілін бірге үйрен',
+        short_name: 'Бірге',
         lang: 'kk',
         start_url: '/',
         display: 'standalone',

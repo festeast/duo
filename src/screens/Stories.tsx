@@ -14,6 +14,7 @@ import { addXp } from "../lib/api";
 import { sfx } from "../lib/sound";
 import { speak, speakAll, stopSpeaking } from "../lib/speech";
 import { dayKey } from "../lib/store";
+import { StoryIcon } from "../components/StoryIcon";
 import { checkAchievements } from "../lib/achievements";
 import { STORY_QUIZ } from "../data/storyQuiz";
 import { shuffle } from "../lib/exercises";
@@ -98,7 +99,7 @@ export function Stories({ onOpen }: { onOpen: (id: string) => void }) {
                   onOpen(s.id);
                 }}
               >
-                <span className="story-icon">{s.icon}</span>
+                <StoryIcon id={s.id} level={s.level} />
                 <span
                   className="col"
                   style={{ gap: 2, flex: 1, alignItems: "flex-start" }}
@@ -153,7 +154,7 @@ export function StoryRead({ id, onBack }: { id: string; onBack: () => void }) {
           ←
         </button>
         <h2 style={{ flex: 1 }}>
-          {story.icon} {story.title}
+          {story.title}
         </h2>
       </div>
 

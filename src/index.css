@@ -592,3 +592,5 @@ h2.ih, h3.ih { display: flex; }
 .badge-bar { width: 44px; height: 5px; border-radius: 9px; background: var(--card-2); overflow: hidden; }
 .badge-bar i { display: block; height: 100%; background: var(--green); }
 .badge-detail { background: var(--bg-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+
+.story-ico { border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
