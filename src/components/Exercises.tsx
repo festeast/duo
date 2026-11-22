@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { WordPic } from './Pictos'
 import { Link2, Mic, Shapes, Snail, Sparkles, TriangleAlert, Volume2 } from './Icon'
 import { FormsSheet } from './FormsSheet'
 import type { Pair } from '../data/course'
@@ -339,7 +340,7 @@ export function WordCard({ w }: { w: Word }) {
       <span className="new-badge">
           <Sparkles size={14} /> {t.newWord}
         </span>
-      {w.emoji && <span className="word-emoji">{w.emoji}</span>}
+      <WordPic w={w} size={64} />
       <button className="word-tr" onClick={() => speak(w.tr)}>
         {w.tr} <Volume2 className="speaker" size={24} />
       </button>

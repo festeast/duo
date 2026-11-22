@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { WordPic } from './Pictos'
 import { wordByTr } from '../data/words'
 import { t } from '../i18n/kk'
 import { formsOf } from '../lib/forms'
@@ -18,8 +19,8 @@ export function FormsSheet({ tr, onClose }: { tr: string; onClose: () => void })
     <div className="sheet-back" onClick={onClose}>
       <div className="sheet slide-up" onClick={(e) => e.stopPropagation()}>
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <button className="word-tr small-word" onClick={() => speak(tr)}>
-            {w?.emoji ? `${w.emoji} ` : ''}
+          <button className="word-tr small-word ih" onClick={() => speak(tr)}>
+            {w && <WordPic w={w} size={36} />}
             {tr} <Volume2 className="speaker" size={20} />
           </button>
           <button className="icon-btn" onClick={onClose} aria-label={t.cancel}>

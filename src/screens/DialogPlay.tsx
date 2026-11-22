@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { DialogGlyph } from '../components/Pictos'
 import { Coin, MessageCircle, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { Feedback, MicButton, Options, TileBuilder, type Status } from '../components/Exercises'
@@ -214,7 +215,7 @@ function DialogView({
           <i style={{ width: `${(step / lines.length) * 100}%` }} />
         </div>
         <span className="dialog-badge">
-          {dialog.icon} {dialog.title}
+          <DialogGlyph id={dialog.id} size={16} /> {dialog.title}
         </span>
       </div>
 

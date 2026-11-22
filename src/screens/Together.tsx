@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { DialogGlyph, DialogPic } from '../components/Pictos'
 import { WifiOff, CatIcon, Check, Flame, Lock, MessageCircle, Pause, Trophy, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { DEFAULT_NAMES, DIALOGS, EPISODES, LEVEL_NAMES, dialogById, isNamedRole, personalize, turnsOf, type Dialog, type Level } from '../data/dialogs'
@@ -149,7 +150,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
               const partner = friends.find((f) => f.profile.id === pid)?.profile
               return (
                 <button key={sess.id} className="card row choice" onClick={() => onDialog({ kind: 'online', sessionId: sess.id })}>
-                  <span style={{ fontSize: 30 }}>{d.icon}</span>
+                  <DialogPic id={d.id} size={44} />
                   <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start' }}>
                     <b>{d.title}</b>
                     <span className="muted small">
@@ -162,7 +163,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
             })}
             {solo.map(({ d, p }) => (
               <button key={d.id} className="card row choice" onClick={() => onDialog({ kind: 'solo', dialogId: d.id, role: p!.role })}>
-                <span style={{ fontSize: 30 }}>{d.icon}</span>
+                <DialogPic id={d.id} size={44} />
                 <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start' }}>
                   <b>{d.title}</b>
                   <span className="muted small">
@@ -196,7 +197,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
                   setPicking(d)
                 }}
               >
-                <span className="ep-num">{done ? <Check size={20} /> : open ? d.icon : <Lock size={18} />}</span>
+                <span className="ep-num">{done ? <Check size={20} /> : open ? <DialogGlyph id={d.id} size={20} /> : <Lock size={18} />}</span>
                 <span className="col" style={{ gap: 0, alignItems: 'flex-start', flex: 1 }}>
                   <span className="muted tiny">{t.episode(d.series!.episode)}</span>
                   <b>{d.title}</b>
@@ -231,7 +232,7 @@ export function Together({ onDialog }: { onDialog: (d: DialogStart) => void }) {
                       setPicking(d)
                     }}
                   >
-                    <span className="dialog-icon">{d.icon}</span>
+                    <DialogPic id={d.id} size={48} />
                     <b>{d.title}</b>
                     <span className="muted small">
                       {shown.roles.A} · {shown.roles.B}
@@ -319,8 +320,8 @@ function DialogSheet({
     <div className="sheet-backdrop" onClick={onClose}>
       <div className="sheet slide-up" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
-        <h2>
-          {dialog.icon} {dialog.title}
+        <h2 className="ih">
+          <DialogGlyph id={dialog.id} size={24} /> {dialog.title}
         </h2>
 
         <span className="muted small">{t.chooseRole}</span>

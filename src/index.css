@@ -594,3 +594,4 @@ h2.ih, h3.ih { display: flex; }
 .badge-detail { background: var(--bg-2); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
 
 .story-ico { border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.pic { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }

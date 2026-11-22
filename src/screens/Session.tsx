@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { WordPic } from '../components/Pictos'
 import { Ear, PenLine, Repeat, Search, Sparkles, Speech, X } from '../components/Icon'
 import { Cat } from '../components/Cat'
 import { Feedback, Match, MicButton, Options, SpeakButtons, TileBuilder, TypeAnswer, WordCard, type Status } from '../components/Exercises'
@@ -230,7 +231,6 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
             <h3 className="ex-title">{ex.dir === 'tr-kk' ? t.chooseTranslation : t.chooseTurkish}</h3>
             <div className="card row" style={{ justifyContent: 'space-between' }}>
               <span className="prompt">
-                {ex.dir === 'kk-tr' && ex.word.emoji ? `${ex.word.emoji} ` : ''}
                 {ex.prompt}
               </span>
               {ex.speak && <SpeakButtons text={ex.speak} />}
@@ -253,7 +253,7 @@ export function Session({ plan, onExit, onFinish }: { plan: Plan; onExit: () => 
               <PenLine size={22} className="ih-accent" /> {t.typeTitle}
             </h3>
             <div className="card row">
-              {ex.word.emoji && <span style={{ fontSize: 34 }}>{ex.word.emoji}</span>}
+              <WordPic w={ex.word} size={44} />
               <span className="prompt">{ex.prompt}</span>
             </div>
             <TypeAnswer value={typed} setValue={setTyped} locked={status !== 'idle'} onEnter={() => status === 'idle' && check()} />

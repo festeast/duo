@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { PhrasePic } from '../components/Pictos'
 import { Clapperboard, Lightbulb, Play, Square, Target, Trophy, Volume2, X } from '../components/Icon'
 import { PHRASES, type Phrase } from '../data/phrases'
 import { t } from '../i18n/kk'
@@ -103,7 +104,7 @@ export function Phrases() {
               setOpen(open === i ? null : i)
             }}
           >
-            <span className="phrase-emoji">{p.emoji}</span>
+            <PhrasePic tr={p.tr} />
             <span className="col" style={{ gap: 2, flex: 1, alignItems: 'flex-start', textAlign: 'left' }}>
               <b className="phrase-tr">{p.tr}</b>
               <span className="muted small">{p.kk}</span>

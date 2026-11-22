@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { WordPic } from '../components/Pictos'
 import { FormsSheet } from '../components/FormsSheet'
 import { Brain, CheckCircle2, Lightbulb, Repeat, Sparkles, Target } from '../components/Icon'
 import { Cat } from '../components/Cat'
@@ -126,8 +127,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
               ))}
               {plan.fresh.map((w) => (
                 <span key={w.tr} className="chip-word fresh">
-                  <Sparkles size={13} /> {w.emoji ? `${w.emoji} ` : ''}
-                  {w.tr}
+                  <Sparkles size={13} />                   {w.tr}
                 </span>
               ))}
             </div>
@@ -229,7 +229,7 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
                   setFormsOf(w.tr)
                 }}
               >
-                <span className="wr-emoji">{w.emoji ?? '•'}</span>
+                <WordPic w={w} size={38} />
                 <span className="wr-main">
                   <b>
                     {w.tr} {w.cognate && <CognateBadge c={w.cognate} compact />}

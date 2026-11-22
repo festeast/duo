@@ -29,7 +29,7 @@ export function InviteBanner({ onJoin }: { onJoin: (sessionId: string) => void }
     <div className="invite slide-down" role="alert">
       {host && <Cat look={host.cat} size={48} mood="happy" />}
       <span style={{ flex: 1 }}>
-        {d?.icon} {t.inviteFrom(host?.name ?? '…', d?.title ?? '')}
+        {t.inviteFrom(host?.name ?? '…', d?.title ?? '')}
       </span>
       <div className="col" style={{ gap: 6 }}>
         <button
