@@ -30,6 +30,7 @@ export type State = {
   gifts: { id: number; from: string; item: string }[] // маған келген, әлі көрілмеген сыйлықтар
   achievements: string[] | null // алынған жетістіктер (null — кесте әлі жоқ)
   newBadges: { id: string; reward: number }[] // жаңа ғана алынған (көрсету үшін)
+  topicTests: { passed: string[]; freeLeft: boolean } | null // тақырып тесттері (null — кесте жоқ)
 }
 
 const SOUND_KEY = 'duo-sound'
@@ -60,6 +61,7 @@ let state: State = {
   gifts: [],
   achievements: null,
   newBadges: [],
+  topicTests: null,
 }
 
 const listeners = new Set<() => void>()

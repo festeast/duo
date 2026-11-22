@@ -539,3 +539,8 @@ export function DialogGlyph({ id, size = 18 }: { id: string; size?: number }) {
 export function PhrasePic({ tr, size = 44 }: { tr: string; size?: number }) {
   return <Pic I={PHRASE[tr] ?? L.Clapperboard} size={size} color="var(--purple)" />
 }
+
+/** Тақырыптың белгішесі */
+export function TopicPic({ topic, size = 42, color = 'var(--blue)' }: { topic: string; size?: number; color?: string }) {
+  return <Pic I={TOPIC[topic] ?? L.Sparkles} size={size} color={color} />
+}

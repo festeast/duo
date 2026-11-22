@@ -21,6 +21,7 @@ import { GiftModal } from './components/GiftModal'
 import { BadgeModal } from './components/Badges'
 import { useAchievements } from './lib/achievements'
 import { Shop } from './screens/Shop'
+import { TopicTest } from './screens/TopicTest'
 import { Together, type DialogStart } from './screens/Together'
 
 type Tab = 'learn' | 'read' | 'together' | 'shop' | 'me'
@@ -30,6 +31,7 @@ type Screen =
   | { name: 'session'; plan: Plan }
   | { name: 'story'; id: string }
   | { name: 'placement' }
+  | { name: 'topictest'; topic: string }
   | { name: 'dialog'; start: DialogStart }
   | { name: 'result'; r: LessonResult; back: Tab }
 
@@ -89,6 +91,9 @@ export default function App() {
       case 'session':
         body = <Session plan={screen.plan} onExit={() => main()} onFinish={(r) => go({ name: 'result', r, back: 'learn' })} />
         break
+      case 'topictest':
+        body = <TopicTest topic={screen.topic} onDone={() => main('learn')} />
+        break
       case 'placement':
         body = <Placement onDone={() => main('learn')} />
         break
@@ -112,7 +117,7 @@ export default function App() {
         body = (
           <>
             <Header onCat={() => main('me')} />
-            {screen.tab === 'learn' && <Today onStart={(plan) => go({ name: 'session', plan })} onPlacement={() => go({ name: 'placement' })} />}
+            {screen.tab === 'learn' && <Today onStart={(plan) => go({ name: 'session', plan })} onPlacement={() => go({ name: 'placement' })} onTopicTest={(topic) => go({ name: 'topictest', topic })} />}
             {screen.tab === 'read' && <Stories onOpen={(id) => go({ name: 'story', id })} />}
             {screen.tab === 'together' && <Together onDialog={(start) => go({ name: 'dialog', start })} />}
             {screen.tab === 'shop' && <Shop />}
@@ -142,8 +147,9 @@ export default function App() {
 
   return (
     <div className="app">
-      {session && profile && <GiftModal />}
-      {session && profile && <BadgeModal />}
+      {/* Сабақ/тест үстінде терезе шықпайды — тек басты экрандарда */}
+      {session && profile && screen.name === 'main' && <GiftModal />}
+      {session && profile && screen.name === 'main' && <BadgeModal />}
       {session && profile && !inDialog && <InviteBanner onJoin={(sessionId) => go({ name: 'dialog', start: { kind: 'online', sessionId } })} />}
       {body}
       {toastMsg && <div className="toast pop">{toastMsg}</div>}

@@ -292,6 +292,48 @@ export async function claimAchievement(id: string): Promise<number | null> {
   return Number(data)
 }
 
+// ---------- Тақырып тесттері ----------
+
+export async function loadTopicTests() {
+  const uid = getState().session?.user.id
+  if (!uid) return
+  const { data, error } = await supabase.from('topic_tests').select('topic, free, passed, started_at').eq('user_id', uid)
+  if (error) return
+  const rows = data as { topic: string; free: boolean; passed: boolean; started_at: string }[]
+  const weekAgo = Date.now() - 7 * 86400000
+  setState({
+    topicTests: {
+      passed: [...new Set(rows.filter((r) => r.passed).map((r) => r.topic))],
+      freeLeft: !rows.some((r) => r.free && new Date(r.started_at).getTime() > weekAgo),
+    },
+  })
+}
+
+/** Тестті бастау: тегін немесе 30 тиын. Қайтарады: тест id немесе null */
+export async function startTopicTest(topic: string): Promise<number | null> {
+  if (!navigator.onLine) {
+    toast(t.needOnline)
+    return null
+  }
+  const { data, error } = await supabase.rpc('start_topic_test', { p_topic: topic })
+  if (error) {
+    toast(t.errNetwork)
+    return null
+  }
+  if (Number(data) < 0) {
+    toast(t.notEnough)
+    return null
+  }
+  await Promise.all([loadMe(), loadTopicTests()])
+  return Number(data)
+}
+
+export async function finishTopicTest(id: number, score: number, total: number) {
+  const { data } = await supabase.rpc('finish_topic_test', { p_id: id, p_score: score, p_total: total })
+  await loadTopicTests()
+  return data === true
+}
+
 // ---------- Серияны сақтау («мұз») ----------
 
 export async function buyFreeze() {
@@ -564,7 +606,7 @@ async function handleSession(session: Session | null) {
   if (!session) {
     stopRealtime()
     stopPolling()
-    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {}, gifts: [], achievements: null, newBadges: [] })
+    setState({ ready: true, profile: null, friends: [], invites: [], activeDialogs: [], progress: {}, days: {}, words: {}, gifts: [], achievements: null, newBadges: [], topicTests: null })
     return
   }
   refreshPending(session.user.id)
@@ -576,7 +618,7 @@ async function handleSession(session: Session | null) {
       rpc: async (r) => (await supabase.rpc(r.fn, r.args)).error,
     })
   }
-  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs(), loadGifts(), loadAchievements()])
+  await Promise.all([loadMe(), loadFriends(), loadInvites(), loadActiveDialogs(), loadGifts(), loadAchievements(), loadTopicTests()])
   startRealtime()
   setState({ ready: true })
 }

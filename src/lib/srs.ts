@@ -190,5 +190,22 @@ export function gradeHard(prev: WordState, ok: boolean, today = dayKey()): WordS
   return ok ? { ...prev, correct: prev.correct + 1 } : grade(prev, false, today)
 }
 
+/** Тақырып тесті өтілді: сөздер толық меңгерілген деп есептеледі (жарты жылдан кейін бір қайталау) */
+export function masterWords(list: Word[], states: Record<string, WordState>, today = dayKey()) {
+  const updates: Record<string, WordState> = {}
+  for (const w of list) {
+    const prev = states[w.tr]
+    updates[w.tr] = {
+      stage: MAX_STAGE,
+      due_on: addDays(today, 180),
+      first_seen: prev?.first_seen ?? today,
+      last_seen: today,
+      correct: (prev?.correct ?? 0) + 1,
+      wrong: prev?.wrong ?? 0,
+    }
+  }
+  return updates
+}
+
 /** Сөз қаншалықты бекіген (0–1) */
 export const strength = (s: WordState) => s.stage / MAX_STAGE

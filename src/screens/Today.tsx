@@ -1,15 +1,14 @@
 import { useMemo, useState } from 'react'
-import { WordPic } from '../components/Pictos'
+import { TopicGroups } from '../components/TopicGroups'
 import { FormsSheet } from '../components/FormsSheet'
 import { Brain, CheckCircle2, Lightbulb, Repeat, Sparkles, Target } from '../components/Icon'
 import { Cat } from '../components/Cat'
-import { CognateBadge } from '../components/Exercises'
 import { tipOfDay } from '../data/grammar'
 import { WORD_LIST } from '../data/words'
 import { t } from '../i18n/kk'
 import { sfx } from '../lib/sound'
 import { speak } from '../lib/speech'
-import { MAX_STAGE, dueLabel, getNewPerDay, hardPlan, hardWords, isLearned, todayPlan, type Plan } from '../lib/srs'
+import { getNewPerDay, hardPlan, hardWords, isLearned, todayPlan, type Plan } from '../lib/srs'
 import { placedKey } from '../lib/placement'
 import { dayKey, studiedToday, useStore } from '../lib/store'
 
@@ -24,7 +23,7 @@ function readExtra() {
   }
 }
 
-export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void; onPlacement: () => void }) {
+export function Today({ onStart, onPlacement, onTopicTest }: { onStart: (plan: Plan) => void; onPlacement: () => void; onTopicTest: (topic: string) => void }) {
   const me = useStore((s) => s.profile)
   const words = useStore((s) => s.words)
   const wordsLoaded = useStore((s) => s.wordsLoaded)
@@ -32,7 +31,6 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
   const uid = useStore((s) => s.session?.user.id)
   const [skipTest, setSkipTest] = useState(false)
   const [extra, setExtra] = useState(readExtra)
-  const [showAll, setShowAll] = useState(false)
   const [formsOf, setFormsOf] = useState<string | null>(null)
   const plan = useMemo(() => todayPlan(words, extra), [words, extra])
   const hard = useMemo(() => hardWords(words), [words])
@@ -208,52 +206,8 @@ export function Today({ onStart, onPlacement }: { onStart: (plan: Plan) => void;
         </div>
       </section>
 
-      {/* ---------- Үйренген сөздер ---------- */}
-      <section className="col">
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <h3>{t.learnedWords}</h3>
-          <span className="muted small">
-            {learned.length}/{WORD_LIST.length}
-          </span>
-        </div>
-        {learned.length === 0 && <p className="muted small">{t.learnedEmpty}</p>}
-        <div className="word-list">
-          {(showAll ? learned : learned.slice(0, 15)).map((w) => {
-            const st = words[w.tr]
-            return (
-              <button
-                key={w.tr}
-                className="word-row"
-                onClick={() => {
-                  speak(w.tr)
-                  setFormsOf(w.tr)
-                }}
-              >
-                <WordPic w={w} size={38} />
-                <span className="wr-main">
-                  <b>
-                    {w.tr} {w.cognate && <CognateBadge c={w.cognate} compact />}
-                  </b>
-                  <span className="muted small">{w.kk}</span>
-                </span>
-                <span className="wr-side">
-                  <span className="dots" aria-label={`${st.stage}/${MAX_STAGE}`}>
-                    {Array.from({ length: MAX_STAGE }, (_, i) => (
-                      <i key={i} className={i < st.stage ? 'on' : ''} />
-                    ))}
-                  </span>
-                  <span className={`due ${st.due_on <= dayKey() ? 'now' : ''}`}>{dueLabel(st.due_on)}</span>
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        {learned.length > 15 && (
-          <button className="link-btn" onClick={() => setShowAll(!showAll)}>
-            {showAll ? t.showLess : t.showAll(learned.length)}
-          </button>
-        )}
-      </section>
+      {/* ---------- Үйренген сөздер (тақырыптар бойынша) ---------- */}
+      <TopicGroups onWord={setFormsOf} onTest={onTopicTest} />
       {formsOf && <FormsSheet tr={formsOf} onClose={() => setFormsOf(null)} />}
     </div>
   )
